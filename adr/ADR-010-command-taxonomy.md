@@ -99,6 +99,13 @@ public interface IIntegrationEvent
     DateTimeOffset OccurredAt { get; }
 }
 
+// Базовый тип для удобства: не нужно дублировать EventId/OccurredAt
+public abstract record IntegrationEvent : IIntegrationEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
+}
+
 // Диспетчер межсервисных команд
 public interface IIntegrationCommandDispatcher
 {
@@ -109,7 +116,10 @@ public interface IIntegrationCommandDispatcher
 // Издатель интеграционных событий
 public interface IIntegrationEventPublisher
 {
-    Task PublishAsync(IIntegrationEvent @event, CancellationToken ct = default);
+    Task PublishAsync(
+        IIntegrationEvent @event,
+        string partitionKey,
+        CancellationToken ct = default);
 }
 ```
 
@@ -130,11 +140,13 @@ public record ChargePaymentIntegrationCommand(OrderId OrderId, Money Amount)
 
 // Интеграционное событие — через IIntegrationEventPublisher → Kafka → любой подписчик
 public record OrderPlacedIntegrationEvent(OrderId OrderId, CustomerId CustomerId, Money Total)
-    : IIntegrationEvent
-{
-    public Guid EventId { get; init; } = Guid.NewGuid();
-    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
-}
+    : IntegrationEvent;
+
+// Публикация с ключом партиционирования:
+await _integrationEventPublisher.PublishAsync(
+    new OrderPlacedIntegrationEvent(order.Id, order.CustomerId, order.Total),
+    partitionKey: order.Id.Value.ToString(),
+    ct);
 ```
 
 HTTP-вызовы между сервисами реализуются через интерфейсы Anti-Corruption Layer в слое Application или Domain, а не через `IIntegrationCommand`:
@@ -149,6 +161,8 @@ public interface IPaymentService
 ```
 
 `IIntegrationCommand` предназначен исключительно для взаимодействия через шину сообщений. Синхронные HTTP-вызовы используют интерфейсы сервис-клиентов.
+
+Для Kafka ключ партиционирования передаётся явно в `PublishAsync(..., partitionKey, ...)`. Базовое правило: использовать стабильный ключ бизнес-сущности (например, `OrderId`), чтобы все сообщения по одной сущности попадали в одну партицию и сохраняли порядок обработки.
 
 ### Аргументация
 

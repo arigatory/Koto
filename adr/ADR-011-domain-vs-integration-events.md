@@ -91,15 +91,19 @@ public interface IIntegrationEvent
     string? CorrelationId { get; }
 }
 
+public abstract record IntegrationEvent : IIntegrationEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
+    public string? CorrelationId { get; init; }
+}
+
 // Плоская схема с примитивами — никаких внутренних типов
 public sealed record OrderPlacedIntegrationEvent(
-    Guid EventId,
-    DateTimeOffset OccurredAt,
-    string? CorrelationId,
     Guid OrderId,
     Guid CustomerId,
     decimal Total            // примитив, не Money VO
-) : IIntegrationEvent;
+) : IntegrationEvent;
 ```
 
 **Явная трансляция** происходит в обработчике Domain Event:
@@ -111,13 +115,11 @@ public class OrderPlacedDomainEventHandler
     {
         // Явное отображение — выбираем, что открывать наружу
         await publisher.PublishAsync(new OrderPlacedIntegrationEvent(
-            EventId: Guid.NewGuid(),
-            OccurredAt: DateTimeOffset.UtcNow,
-            CorrelationId: evt.CorrelationId,
             OrderId: evt.OrderId.Value,
             CustomerId: evt.CustomerId.Value,
             Total: evt.TotalAmount.Amount     // примитив, не Money VO
-        ));
+        ) { CorrelationId = evt.CorrelationId },
+        partitionKey: evt.OrderId.Value.ToString());
     }
 }
 ```
