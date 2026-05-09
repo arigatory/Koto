@@ -97,9 +97,11 @@ public abstract record IntegrationEvent : IIntegrationEvent
     public DateTimeOffset OccurredAt { get; init; }
     public string? CorrelationId { get; init; }
 
+    // Для новых событий в runtime
     protected IntegrationEvent(string? correlationId = null)
         : this(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId) { }
 
+    // Для replay/rehydration — метаданные задаются явно
     protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt, string? correlationId)
     {
         EventId = eventId;
@@ -109,6 +111,7 @@ public abstract record IntegrationEvent : IIntegrationEvent
 }
 
 // Плоская схема с примитивами — никаких внутренних типов
+// Domain-поля идут первыми для читаемости payload; CorrelationId — служебный metadata-параметр.
 public sealed record OrderPlacedIntegrationEvent(
     Guid OrderId,
     Guid CustomerId,

@@ -105,8 +105,10 @@ public abstract record IntegrationEvent : IIntegrationEvent
     public Guid EventId { get; init; }
     public DateTimeOffset OccurredAt { get; init; }
 
+    // Для новых исходящих событий (обычный runtime-путь)
     protected IntegrationEvent() : this(Guid.NewGuid(), DateTimeOffset.UtcNow) { }
 
+    // Для replay/rehydration — значения приходят извне и не генерируются заново
     protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt)
     {
         EventId = eventId;
