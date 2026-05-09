@@ -97,6 +97,7 @@ public interface IIntegrationEvent
 {
     Guid EventId { get; }
     DateTimeOffset OccurredAt { get; }
+    string? CorrelationId { get; }
 }
 
 // Базовый тип для удобства: не нужно дублировать EventId/OccurredAt
@@ -104,15 +105,18 @@ public abstract record IntegrationEvent : IIntegrationEvent
 {
     public Guid EventId { get; init; }
     public DateTimeOffset OccurredAt { get; init; }
+    public string? CorrelationId { get; init; }
 
     // Для новых исходящих событий (обычный runtime-путь)
-    protected IntegrationEvent() : this(Guid.NewGuid(), DateTimeOffset.UtcNow) { }
+    protected IntegrationEvent(string? correlationId = null)
+        : this(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId) { }
 
     // Для replay/rehydration — значения приходят извне и не генерируются заново
-    protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt)
+    protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt, string? correlationId)
     {
         EventId = eventId;
         OccurredAt = occurredAt;
+        CorrelationId = correlationId;
     }
 }
 
@@ -151,8 +155,12 @@ public record ChargePaymentIntegrationCommand(OrderId OrderId, Money Amount)
     : IIntegrationCommand<PaymentId>;
 
 // Интеграционное событие — через IIntegrationEventPublisher → Kafka → любой подписчик
-public record OrderPlacedIntegrationEvent(Guid OrderId, Guid CustomerId, decimal Total)
-    : IntegrationEvent;
+public record OrderPlacedIntegrationEvent(
+    Guid OrderId,
+    Guid CustomerId,
+    decimal Total,
+    string? CorrelationId = null)
+    : IntegrationEvent(CorrelationId);
 
 // Публикация с ключом партиционирования:
 await _integrationEventPublisher.PublishAsync(
