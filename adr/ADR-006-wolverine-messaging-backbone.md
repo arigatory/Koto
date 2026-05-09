@@ -76,7 +76,7 @@ builder.Host.UseWolverine(opts =>
         .AutoProvision();
 
     // Transactional outbox через EF Core
-    opts.Policies.UseSqlServerTransactionalOutboxOnAllSendingEndpoints();
+    opts.Policies.UseNpgsqlTransactionalOutboxOnAllSendingEndpoints();
 });
 
 builder.Services.AddDbContext<AppDbContext>(/* ... */);

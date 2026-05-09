@@ -92,11 +92,11 @@ public interface IIntegrationCommand { }
 // Маркерный интерфейс для межсервисных команд с ожидаемым ответом
 public interface IIntegrationCommand<TResult> { }
 
-// Базовый класс для интеграционных событий
-public abstract record IntegrationEvent
+// Контракт интеграционного события
+public interface IIntegrationEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTimeOffset OccurredAt { get; } = DateTimeOffset.UtcNow;
+    Guid EventId { get; }
+    DateTimeOffset OccurredAt { get; }
 }
 
 // Диспетчер межсервисных команд
@@ -109,7 +109,7 @@ public interface IIntegrationCommandDispatcher
 // Издатель интеграционных событий
 public interface IIntegrationEventPublisher
 {
-    Task PublishAsync(IntegrationEvent @event, CancellationToken ct = default);
+    Task PublishAsync(IIntegrationEvent @event, CancellationToken ct = default);
 }
 ```
 
@@ -130,7 +130,11 @@ public record ChargePaymentIntegrationCommand(OrderId OrderId, Money Amount)
 
 // Интеграционное событие — через IIntegrationEventPublisher → Kafka → любой подписчик
 public record OrderPlacedIntegrationEvent(OrderId OrderId, CustomerId CustomerId, Money Total)
-    : IntegrationEvent;
+    : IIntegrationEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
+}
 ```
 
 HTTP-вызовы между сервисами реализуются через интерфейсы Anti-Corruption Layer в слое Application или Domain, а не через `IIntegrationCommand`:
@@ -172,7 +176,7 @@ public interface IPaymentService
 - HTTP-вызовы между сервисами выходят за рамки таксономии `IIntegrationCommand` и требуют понимания отдельного паттерна ACL
 
 **Зависимости:**
-- `Koto.Application` зависит от интерфейсов `ICqrsDispatcher`, `IIntegrationCommandDispatcher`, `IIntegrationEventPublisher` из `Koto.Domain` или `Koto.Contracts`
+- `Koto.Application` фиксирует интерфейсы `ICqrsDispatcher`, `IIntegrationCommandDispatcher`, `IIntegrationEventPublisher` и `IIntegrationEvent`
 - Все микросервисы обязаны регистрировать оба диспетчера в DI-контейнере
 - Kafka-адаптер реализует `IIntegrationCommandDispatcher` и `IIntegrationEventPublisher` — изменение транспорта не затрагивает код уровня Application
 - ACL-интерфейсы для HTTP (например, `IPaymentService`) живут в Application / Domain; их реализации — в Infrastructure и также регистрируются в DI

@@ -89,12 +89,12 @@ builder.Host.UseWolverine(opts =>
         });
 
     // Включает outbox для всех исходящих эндпоинтов
-    opts.Policies.UseSqlServerTransactionalOutboxOnAllSendingEndpoints();
+    opts.Policies.UseNpgsqlTransactionalOutboxOnAllSendingEndpoints();
 });
 
 // Wolverine-обёртка вместо стандартного AddDbContext
 builder.Services.AddWolverineDbContext<KotoDbContext>(
-    o => o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    o => o.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 ```
 
 Пример обработчика, демонстрирующего атомарность:
