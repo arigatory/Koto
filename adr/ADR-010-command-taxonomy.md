@@ -102,8 +102,16 @@ public interface IIntegrationEvent
 // Базовый тип для удобства: не нужно дублировать EventId/OccurredAt
 public abstract record IntegrationEvent : IIntegrationEvent
 {
-    public Guid EventId { get; init; } = Guid.NewGuid();
-    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
+    public Guid EventId { get; init; }
+    public DateTimeOffset OccurredAt { get; init; }
+
+    protected IntegrationEvent() : this(Guid.NewGuid(), DateTimeOffset.UtcNow) { }
+
+    protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt)
+    {
+        EventId = eventId;
+        OccurredAt = occurredAt;
+    }
 }
 
 // Диспетчер межсервисных команд
