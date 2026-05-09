@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.jimmybogard.com)",
+      "WebFetch(domain:jeremydmiller.com)",
+      "WebFetch(domain:www.milanjovanovic.tech)",
+      "WebFetch(domain:wolverinefx.net)",
+      "WebFetch(domain:www.kurrent.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:news.ycombinator.com)",
+      "WebFetch(domain:masstransit.io)",
+      "WebFetch(domain:masstransit.massient.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//Users/ivan/**)"
+    ]
+  }
+}

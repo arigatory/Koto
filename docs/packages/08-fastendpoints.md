@@ -1,0 +1,71 @@
+# Koto.Api.FastEndpoints — Plan
+
+**Phase:** 3 | **Status:** NOT STARTED
+**Depends on:** Koto.Application + FastEndpoints (MIT)
+
+---
+
+## Цель
+
+Base endpoint классы для CQRS. Каждый endpoint диспатчит команду или запрос через `ICqrsDispatcher`. Problem Details (RFC 7807) из `Error`. Correlation ID propagation.
+
+## Checklist
+
+### Base Endpoints
+- [ ] `CommandEndpoint<TCommand>` — base для команд без возвращаемого значения:
+  - Диспатчит `TCommand` через `ICqrsDispatcher`
+  - При `IsFailure` → `KotoProblemDetails` с 4xx/5xx статусом
+  - При `IsSuccess` → 204 No Content
+
+- [ ] `CommandEndpoint<TCommand, TResult>` — base для команд с результатом:
+  - При `IsSuccess` → 200 с `TResult`
+
+- [ ] `QueryEndpoint<TQuery, TResult>` where TQuery : IQuery<TResult>:
+  - Диспатчит query, возвращает результат
+  - При failure с кодом `*.not-found` → 404, иначе → 400/500
+
+### Problem Details
+- [ ] `KotoProblemDetails` — RFC 7807 factory из `Error`:
+  - Маппинг кодов на HTTP статус: `*.not-found` → 404, `*.already-*` → 409, `general.value.*` → 400, иначе → 500
+  - Включает `Error.Code` как `extensions["errorCode"]`
+  - Включает `CorrelationId` как `extensions["correlationId"]`
+
+### Middleware
+- [ ] `CorrelationIdMiddleware` — ASP.NET Core middleware:
+  - Читает `X-Correlation-ID` из request header (или генерирует новый)
+  - Кладёт в `AsyncLocal<string>` через `ICorrelationIdAccessor`
+  - Добавляет в response header
+
+- [ ] `ICorrelationIdAccessor` — интерфейс: `string? Current { get; }`
+- [ ] `GlobalExceptionHandler` — `IExceptionHandler` (ASP.NET Core 8+): ловит unhandled exceptions → Problem Details 500
+
+### DI Registration
+- [ ] `ServiceCollectionExtensions.AddKotoApi(services)`:
+  - Регистрирует `CorrelationIdMiddleware`
+  - Регистрирует `GlobalExceptionHandler`
+  - Регистрирует `ICorrelationIdAccessor`
+
+## Пример endpoint
+
+```csharp
+public class PlaceOrderEndpoint : CommandEndpoint<PlaceOrderCommand, OrderId>
+{
+    public override void Configure()
+    {
+        Post("/orders");
+        AllowAnonymous();
+    }
+
+    public override async Task HandleAsync(PlaceOrderRequest req, CancellationToken ct)
+    {
+        var command = new PlaceOrderCommand(req.CustomerId, req.Items);
+        await SendCommandAsync(command, ct);
+    }
+}
+```
+
+## Тесты
+- [ ] CommandEndpoint: 204 при Success, ProblemDetails при Failure
+- [ ] QueryEndpoint: 200 с результатом, 404 при not-found error
+- [ ] KotoProblemDetails: правильный HTTP статус из Error.Code
+- [ ] CorrelationId: читается из header или генерируется, добавляется в response
