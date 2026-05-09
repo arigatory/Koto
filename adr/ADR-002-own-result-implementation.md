@@ -19,15 +19,15 @@
 
 | # | Требование |
 |---|-----------|
-| F1 | Тип `Result<T>` представляет либо успешное значение `T`, либо доменную ошибку `Error` |
+| F1 | Тип `Result<T, Error>` представляет либо успешное значение `T`, либо доменную ошибку `Error` |
 | F2 | Свойства `IsSuccess`, `IsFailure`, `Value`, `Error` для интроспекции состояния |
 | F3 | Метод `Map<TNew>(Func<T, TNew>)` — трансформация успешного значения |
-| F4 | Метод `Bind<TNew>(Func<T, Result<TNew>>)` — цепочка функций, возвращающих Result |
+| F4 | Метод `Bind<TNew>(Func<T, Result<TNew, Error>>)` — цепочка функций, возвращающих Result |
 | F5 | Методы `Tap(Action<T>)` и `TapError(Action<Error>)` — побочные эффекты без изменения результата |
 | F6 | Метод `Match<TResult>(onSuccess, onFailure)` — исчерпывающее сопоставление с образцом |
 | F7 | Метод `Ensure(predicate, error)` — валидация значения, перевод в состояние Failure при нарушении |
 | F8 | Асинхронные перегрузки: `MapAsync`, `BindAsync`, `TapAsync`, `EnsureAsync` |
-| F9 | Неявные преобразования: `T → Result<T>` (успех) и `Error → Result<T>` (неудача) |
+| F9 | Неявные преобразования: `T → Result<T, Error>` (успех) и `Error → Result<T, Error>` (неудача) |
 
 ### Нефункциональные
 
@@ -45,7 +45,7 @@
 
 ### Описание
 
-Koto реализует собственный дискриминированный тип `Result<T>` (~150 строк, чистый C#), вдохновлённый подходом Владимира Хорикова. Тип живёт в `Koto.Domain` и не несёт никаких внешних зависимостей.
+Koto реализует собственный дискриминированный тип `Result<T, Error>` (~150 строк, чистый C#), вдохновлённый подходом Владимира Хорикова. Тип живёт в `Koto.Domain` и не несёт никаких внешних зависимостей.
 
 Пример использования в фабричных методах доменных объектов:
 
@@ -54,12 +54,12 @@ Koto реализует собственный дискриминированн�
 public static Result<Email, Error> Create(string value)
 {
     if (string.IsNullOrWhiteSpace(value))
-        return Errors.General.ValueIsRequired(); // неявное Error → Result<Email>
-    return new Email(value);                      // неявное Email → Result<Email>
+        return Errors.General.ValueIsRequired(); // неявное Error → Result<Email, Error>
+    return new Email(value);                      // неявное Email → Result<Email, Error>
 }
 
 // Цепочка в обработчике команды:
-var result = await Result<string>.Success(request.Email)
+var result = await Result<string, Error>.Success(request.Email)
     .Bind(Email.Create)
     .MapAsync(async email => await _repo.FindByEmailAsync(email, ct));
 ```
@@ -86,10 +86,10 @@ var result = await Result<string>.Success(request.Email)
 **Отрицательные:**
 - Необходимо поддерживать реализацию самостоятельно
 - Новые члены команды должны изучить внутреннее API (минимальный onboarding)
-- Асинхронные перегрузки требуют аккуратной работы с `Task<Result<T>>`
+- Асинхронные перегрузки требуют аккуратной работы с `Task<Result<T, Error>>`
 
 **Зависимости:**
-- Все проекты, ссылающиеся на `Koto.Domain`, получают `Result<T>` автоматически
+- Все проекты, ссылающиеся на `Koto.Domain`, получают `Result<T, Error>` автоматически
 - Доменные ошибки должны быть определены в `Errors.*` (централизованный каталог ошибок)
 
 ---

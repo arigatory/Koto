@@ -91,15 +91,33 @@ public interface IIntegrationEvent
     string? CorrelationId { get; }
 }
 
+public abstract record IntegrationEvent : IIntegrationEvent
+{
+    public Guid EventId { get; init; }
+    public DateTimeOffset OccurredAt { get; init; }
+    public string? CorrelationId { get; init; }
+
+    // Для новых событий в runtime
+    protected IntegrationEvent(string? correlationId = null)
+        : this(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId) { }
+
+    // Для replay/rehydration — метаданные задаются явно
+    protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt, string? correlationId)
+    {
+        EventId = eventId;
+        OccurredAt = occurredAt;
+        CorrelationId = correlationId;
+    }
+}
+
 // Плоская схема с примитивами — никаких внутренних типов
+// Domain-поля идут первыми для читаемости payload; CorrelationId — служебный metadata-параметр.
 public sealed record OrderPlacedIntegrationEvent(
-    Guid EventId,
-    DateTimeOffset OccurredAt,
-    string? CorrelationId,
     Guid OrderId,
     Guid CustomerId,
-    decimal Total            // примитив, не Money VO
-) : IIntegrationEvent;
+    decimal Total,           // примитив, не Money VO
+    string? CorrelationId = null
+) : IntegrationEvent(CorrelationId);
 ```
 
 **Явная трансляция** происходит в обработчике Domain Event:
@@ -111,13 +129,11 @@ public class OrderPlacedDomainEventHandler
     {
         // Явное отображение — выбираем, что открывать наружу
         await publisher.PublishAsync(new OrderPlacedIntegrationEvent(
-            EventId: Guid.NewGuid(),
-            OccurredAt: DateTimeOffset.UtcNow,
-            CorrelationId: evt.CorrelationId,
             OrderId: evt.OrderId.Value,
             CustomerId: evt.CustomerId.Value,
-            Total: evt.TotalAmount.Amount     // примитив, не Money VO
-        ));
+            Total: evt.TotalAmount.Amount,    // примитив, не Money VO
+            CorrelationId: evt.CorrelationId),
+        partitionKey: evt.OrderId.Value.ToString());
     }
 }
 ```

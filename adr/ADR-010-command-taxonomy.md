@@ -92,11 +92,32 @@ public interface IIntegrationCommand { }
 // Маркерный интерфейс для межсервисных команд с ожидаемым ответом
 public interface IIntegrationCommand<TResult> { }
 
-// Базовый класс для интеграционных событий
-public abstract record IntegrationEvent
+// Контракт интеграционного события
+public interface IIntegrationEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTimeOffset OccurredAt { get; } = DateTimeOffset.UtcNow;
+    Guid EventId { get; }
+    DateTimeOffset OccurredAt { get; }
+    string? CorrelationId { get; }
+}
+
+// Базовый тип для удобства: не нужно дублировать EventId/OccurredAt
+public abstract record IntegrationEvent : IIntegrationEvent
+{
+    public Guid EventId { get; init; }
+    public DateTimeOffset OccurredAt { get; init; }
+    public string? CorrelationId { get; init; }
+
+    // Для новых исходящих событий (обычный runtime-путь)
+    protected IntegrationEvent(string? correlationId = null)
+        : this(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId) { }
+
+    // Для replay/rehydration — значения приходят извне и не генерируются заново
+    protected IntegrationEvent(Guid eventId, DateTimeOffset occurredAt, string? correlationId)
+    {
+        EventId = eventId;
+        OccurredAt = occurredAt;
+        CorrelationId = correlationId;
+    }
 }
 
 // Диспетчер межсервисных команд
@@ -109,9 +130,14 @@ public interface IIntegrationCommandDispatcher
 // Издатель интеграционных событий
 public interface IIntegrationEventPublisher
 {
-    Task PublishAsync(IntegrationEvent @event, CancellationToken ct = default);
+    Task PublishAsync(
+        IIntegrationEvent @event,
+        string partitionKey,
+        CancellationToken ct = default);
 }
 ```
+
+Для Kafka ключ партиционирования передаётся явно в `PublishAsync(..., partitionKey, ...)`. Базовое правило: использовать стабильный ключ бизнес-сущности (например, `OrderId`), чтобы все сообщения по одной сущности попадали в одну партицию и сохраняли порядок обработки.
 
 Примеры использования таксономии:
 
@@ -129,8 +155,21 @@ public record ChargePaymentIntegrationCommand(OrderId OrderId, Money Amount)
     : IIntegrationCommand<PaymentId>;
 
 // Интеграционное событие — через IIntegrationEventPublisher → Kafka → любой подписчик
-public record OrderPlacedIntegrationEvent(OrderId OrderId, CustomerId CustomerId, Money Total)
-    : IntegrationEvent;
+public record OrderPlacedIntegrationEvent(
+    Guid OrderId,
+    Guid CustomerId,
+    decimal Total,
+    string? CorrelationId = null)
+    : IntegrationEvent(CorrelationId);
+
+// Публикация с ключом партиционирования:
+await _integrationEventPublisher.PublishAsync(
+    new OrderPlacedIntegrationEvent(
+        order.Id.Value,
+        order.CustomerId.Value,
+        order.Total.Amount),
+    partitionKey: order.Id.Value.ToString(),
+    ct);
 ```
 
 HTTP-вызовы между сервисами реализуются через интерфейсы Anti-Corruption Layer в слое Application или Domain, а не через `IIntegrationCommand`:
@@ -172,7 +211,7 @@ public interface IPaymentService
 - HTTP-вызовы между сервисами выходят за рамки таксономии `IIntegrationCommand` и требуют понимания отдельного паттерна ACL
 
 **Зависимости:**
-- `Koto.Application` зависит от интерфейсов `ICqrsDispatcher`, `IIntegrationCommandDispatcher`, `IIntegrationEventPublisher` из `Koto.Domain` или `Koto.Contracts`
+- `Koto.Application` фиксирует интерфейсы `ICqrsDispatcher`, `IIntegrationCommandDispatcher`, `IIntegrationEventPublisher` и `IIntegrationEvent`
 - Все микросервисы обязаны регистрировать оба диспетчера в DI-контейнере
 - Kafka-адаптер реализует `IIntegrationCommandDispatcher` и `IIntegrationEventPublisher` — изменение транспорта не затрагивает код уровня Application
 - ACL-интерфейсы для HTTP (например, `IPaymentService`) живут в Application / Domain; их реализации — в Infrastructure и также регистрируются в DI
