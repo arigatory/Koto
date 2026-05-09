@@ -133,6 +133,8 @@ public interface IIntegrationEventPublisher
 }
 ```
 
+Для Kafka ключ партиционирования передаётся явно в `PublishAsync(..., partitionKey, ...)`. Базовое правило: использовать стабильный ключ бизнес-сущности (например, `OrderId`), чтобы все сообщения по одной сущности попадали в одну партицию и сохраняли порядок обработки.
+
 Примеры использования таксономии:
 
 ```csharp
@@ -149,12 +151,15 @@ public record ChargePaymentIntegrationCommand(OrderId OrderId, Money Amount)
     : IIntegrationCommand<PaymentId>;
 
 // Интеграционное событие — через IIntegrationEventPublisher → Kafka → любой подписчик
-public record OrderPlacedIntegrationEvent(OrderId OrderId, CustomerId CustomerId, Money Total)
+public record OrderPlacedIntegrationEvent(Guid OrderId, Guid CustomerId, decimal Total)
     : IntegrationEvent;
 
 // Публикация с ключом партиционирования:
 await _integrationEventPublisher.PublishAsync(
-    new OrderPlacedIntegrationEvent(order.Id, order.CustomerId, order.Total),
+    new OrderPlacedIntegrationEvent(
+        order.Id.Value,
+        order.CustomerId.Value,
+        order.Total.Amount),
     partitionKey: order.Id.Value.ToString(),
     ct);
 ```
@@ -171,8 +176,6 @@ public interface IPaymentService
 ```
 
 `IIntegrationCommand` предназначен исключительно для взаимодействия через шину сообщений. Синхронные HTTP-вызовы используют интерфейсы сервис-клиентов.
-
-Для Kafka ключ партиционирования передаётся явно в `PublishAsync(..., partitionKey, ...)`. Базовое правило: использовать стабильный ключ бизнес-сущности (например, `OrderId`), чтобы все сообщения по одной сущности попадали в одну партицию и сохраняли порядок обработки.
 
 ### Аргументация
 
