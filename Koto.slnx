@@ -1,8 +1,12 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Koto.Application/Koto.Application.csproj" />
     <Project Path="src/Koto.Domain/Koto.Domain.csproj" />
+    <Project Path="src/Koto.Validation/Koto.Validation.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Koto.Application.Tests/Koto.Application.Tests.csproj" />
     <Project Path="tests/Koto.Domain.Tests/Koto.Domain.Tests.csproj" />
+    <Project Path="tests/Koto.Validation.Tests/Koto.Validation.Tests.csproj" />
   </Folder>
 </Solution>

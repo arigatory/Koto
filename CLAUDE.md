@@ -4,7 +4,7 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 Первый потребитель: **Task137** (`/Users/ivan/source/task137`).
 
 ## Текущий статус
-- **Phase 1** — Domain Core: IN PROGRESS (`Koto.Domain` ✓, `Koto.Application` и `Koto.Validation` — NOT STARTED)
+- **Phase 1** — Domain Core: DONE (`Koto.Domain` ✓, `Koto.Application` ✓, `Koto.Validation` ✓)
 - Детальный индекс фаз: `PLAN.md`
 - Планы пакетов: `docs/packages/`
 
