@@ -11,7 +11,7 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 ## Стек (все MIT/Apache 2.0)
 - Messaging: **Wolverine** + WolverineFx.Kafka
 - Event Sourcing: **Marten** (PostgreSQL)
-- ORM: **EF Core 9**
+- ORM: **EF Core 10**
 - API: **FastEndpoints**
 - Observability: Serilog + OpenTelemetry .NET
 - Validation: FluentValidation **v7** (pinned — v8+ коммерческий)

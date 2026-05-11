@@ -1,7 +1,7 @@
 # Koto.Infrastructure.EFCore — Plan
 
 **Phase:** 2 | **Status:** NOT STARTED
-**Depends on:** Koto.Domain + Koto.Application + EF Core 9 + Wolverine (для outbox)
+**Depends on:** Koto.Domain + Koto.Application + EF Core 10 + Wolverine (для outbox)
 
 ---
 

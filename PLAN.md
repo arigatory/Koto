@@ -87,6 +87,6 @@
 ## Старт следующей сессии
 ```bash
 dotnet new sln -n Koto
-dotnet new classlib -n Koto.Domain -o src/Koto.Domain
+dotnet new classlib -n Koto.Domain -o src/Koto.Domain --framework net10.0
 ```
 Читать: [docs/packages/01-domain.md](docs/packages/01-domain.md)
