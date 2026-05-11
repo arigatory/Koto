@@ -12,7 +12,17 @@
       "WebFetch(domain:masstransit.io)",
       "WebFetch(domain:masstransit.massient.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Read(//Users/ivan/**)"
+      "Read(//Users/ivan/**)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet sln *)",
+      "Bash(dotnet add *)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(git *)",
+      "Bash(dotnet pack *)",
+      "Bash(dotnet nuget *)",
+      "Bash(unzip -l artifacts/Koto.Domain.0.1.0-preview.1.nupkg)",
+      "Bash(unzip *)"
     ]
   }
 }

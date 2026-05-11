@@ -8,10 +8,10 @@
 ## Фазы
 
 ### Phase 1 — Domain Core
-**Status: NOT STARTED**
+**Status: IN PROGRESS**
 | Пакет | План | Статус |
 |---|---|---|
-| `Koto.Domain` | [docs/packages/01-domain.md](docs/packages/01-domain.md) | NOT STARTED |
+| `Koto.Domain` | [docs/packages/01-domain.md](docs/packages/01-domain.md) | DONE |
 | `Koto.Application` | [docs/packages/02-application.md](docs/packages/02-application.md) | NOT STARTED |
 | `Koto.Validation` | [docs/packages/03-validation.md](docs/packages/03-validation.md) | NOT STARTED |
 

@@ -18,7 +18,7 @@ public sealed record Email
     public string Value { get; }
     private Email(string value) => Value = value;
 
-    public static Result<Email, Error> Create(string value) =>
+    public static Result<Email> Create(string value) =>
         string.IsNullOrWhiteSpace(value) ? Errors.General.ValueIsRequired() :
         value.Length > 150              ? Errors.General.InvalidLength(1, 150) :
                                           new Email(value);
@@ -30,7 +30,7 @@ public sealed record Email
 ```csharp
 public class Order : AggregateRoot<OrderId>
 {
-    public static Result<Order, Error> Place(Customer customer, IReadOnlyList<OrderItem> items)
+    public static Result<Order> Place(Customer customer, IReadOnlyList<OrderItem> items)
     {
         if (items.Count == 0)
             return OrderErrors.NoItems();
@@ -40,7 +40,7 @@ public class Order : AggregateRoot<OrderId>
         return order;
     }
 
-    public Result<Unit, Error> Cancel(string reason)
+    public Result<Unit> Cancel(string reason)
     {
         if (Status == OrderStatus.Cancelled)
             return OrderErrors.AlreadyCancelled();

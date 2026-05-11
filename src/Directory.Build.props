@@ -1,0 +1,31 @@
+<Project>
+  <!-- Chain to root Directory.Build.props -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <Version>0.1.0-preview.1</Version>
+    <Authors>Ivan Panchenko</Authors>
+    <Company>Ivan Panchenko</Company>
+    <Copyright>Copyright © 2026 Ivan Panchenko</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/arigatory/Koto</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arigatory/Koto</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>ddd;cqrs;domain;microservices;dotnet</PackageTags>
+
+    <!-- XML docs for IntelliSense -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Symbol package for debugging -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- SourceLink -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+  </ItemGroup>
+</Project>
