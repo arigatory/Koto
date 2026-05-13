@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Koto.Testing</PackageId>
+    <Description>DDD-specific test helpers for Koto: fluent aggregate assertions, in-memory fake repositories, fake integration event publisher, and Result&lt;T&gt; AwesomeAssertions extensions.</Description>
+    <PackageTags>ddd;testing;xunit;aggregates;assertions;fakes;microservices;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AwesomeAssertions" Version="9.4.0" />
+    <PackageReference Include="xunit.abstractions" Version="2.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
+  </ItemGroup>
+
+</Project>

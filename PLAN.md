@@ -35,7 +35,7 @@
 | Пакет | План | Статус |
 |---|---|---|
 | `Koto.Observability` | [docs/packages/09-observability.md](docs/packages/09-observability.md) | DONE |
-| `Koto.Testing` | [docs/packages/10-testing.md](docs/packages/10-testing.md) | NOT STARTED |
+| `Koto.Testing` | [docs/packages/10-testing.md](docs/packages/10-testing.md) | DONE |
 | `Koto.Scheduling` | [docs/packages/11-scheduling.md](docs/packages/11-scheduling.md) | NOT STARTED |
 | `Koto.Testing.Architecture` | [docs/packages/12-testing-architecture.md](docs/packages/12-testing-architecture.md) | OPTIONAL — пропустить |
 
