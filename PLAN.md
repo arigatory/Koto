@@ -24,10 +24,10 @@
 | `Koto.EventSourcing.Marten` | [docs/packages/06-marten.md](docs/packages/06-marten.md) | DONE |
 
 ### Phase 3 — Messaging + API
-**Status: NOT STARTED**
+**Status: IN PROGRESS**
 | Пакет | План | Статус |
 |---|---|---|
-| `Koto.Messaging.Wolverine` | [docs/packages/07-wolverine.md](docs/packages/07-wolverine.md) | NOT STARTED |
+| `Koto.Messaging.Wolverine` | [docs/packages/07-wolverine.md](docs/packages/07-wolverine.md) | DONE |
 | `Koto.Api.FastEndpoints` | [docs/packages/08-fastendpoints.md](docs/packages/08-fastendpoints.md) | NOT STARTED |
 
 ### Phase 4 — Observability + Testing

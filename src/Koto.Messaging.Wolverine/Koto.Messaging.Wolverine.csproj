@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Koto.Messaging.Wolverine</PackageId>
+    <Description>Wolverine-based implementation of Koto messaging abstractions: integration event publishing, command dispatching, Kafka consumers with idempotency, correlation propagation, and DLQ routing.</Description>
+    <PackageTags>ddd;wolverine;kafka;messaging;outbox;idempotency;microservices;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WolverineFx" Version="5.39.0" />
+    <PackageReference Include="WolverineFx.Kafka" Version="5.39.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
+  </ItemGroup>
+
+</Project>
