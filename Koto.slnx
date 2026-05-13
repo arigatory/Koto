@@ -7,6 +7,7 @@
     <Project Path="src/Koto.Infrastructure.EFCore/Koto.Infrastructure.EFCore.csproj" />
     <Project Path="src/Koto.Infrastructure.Http/Koto.Infrastructure.Http.csproj" />
     <Project Path="src/Koto.Messaging.Wolverine/Koto.Messaging.Wolverine.csproj" />
+    <Project Path="src/Koto.Observability/Koto.Observability.csproj" />
     <Project Path="src/Koto.Validation/Koto.Validation.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -17,6 +18,7 @@
     <Project Path="tests/Koto.Infrastructure.EFCore.Tests/Koto.Infrastructure.EFCore.Tests.csproj" />
     <Project Path="tests/Koto.Infrastructure.Http.Tests/Koto.Infrastructure.Http.Tests.csproj" />
     <Project Path="tests/Koto.Messaging.Wolverine.Tests/Koto.Messaging.Wolverine.Tests.csproj" />
+    <Project Path="tests/Koto.Observability.Tests/Koto.Observability.Tests.csproj" />
     <Project Path="tests/Koto.Validation.Tests/Koto.Validation.Tests.csproj" />
   </Folder>
 </Solution>
