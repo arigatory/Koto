@@ -31,12 +31,12 @@
 | `Koto.Api.FastEndpoints` | [docs/packages/08-fastendpoints.md](docs/packages/08-fastendpoints.md) | DONE |
 
 ### Phase 4 — Observability + Testing
-**Status: NOT STARTED**
+**Status: DONE**
 | Пакет | План | Статус |
 |---|---|---|
 | `Koto.Observability` | [docs/packages/09-observability.md](docs/packages/09-observability.md) | DONE |
 | `Koto.Testing` | [docs/packages/10-testing.md](docs/packages/10-testing.md) | DONE |
-| `Koto.Scheduling` | [docs/packages/11-scheduling.md](docs/packages/11-scheduling.md) | NOT STARTED |
+| `Koto.Scheduling` | [docs/packages/11-scheduling.md](docs/packages/11-scheduling.md) | DONE |
 | `Koto.Testing.Architecture` | [docs/packages/12-testing-architecture.md](docs/packages/12-testing-architecture.md) | OPTIONAL — пропустить |
 
 ### Phase 5 — Templates
