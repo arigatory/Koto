@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Koto.Infrastructure.EFCore</PackageId>
+    <Description>EF Core 10 integration for Koto DDD: generic repository, strongly-typed ID converters, specification pattern, and Wolverine outbox wiring.</Description>
+    <PackageTags>ddd;efcore;repository;specification;wolverine;outbox;microservices;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="WolverineFx" Version="5.39.0" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="5.39.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
+  </ItemGroup>
+
+</Project>

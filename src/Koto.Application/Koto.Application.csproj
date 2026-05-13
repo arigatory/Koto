@@ -5,7 +5,12 @@
     <PackageId>Koto.Application</PackageId>
     <Description>CQRS dispatcher, pipeline behaviors, and cross-service integration abstractions for .NET microservices. Depends only on Koto.Domain and Microsoft.Extensions abstractions.</Description>
     <PackageTags>ddd;cqrs;dispatcher;pipeline;integration-events;microservices;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />

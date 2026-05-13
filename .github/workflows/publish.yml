@@ -22,20 +22,20 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore Koto.slnx
 
       - name: Build
-        run: dotnet build --no-restore -c Release /p:ContinuousIntegrationBuild=true
+        run: dotnet build Koto.slnx --no-restore -c Release /p:ContinuousIntegrationBuild=true
 
       - name: Test
-        run: dotnet test --no-build -c Release --logger "console;verbosity=minimal"
+        run: dotnet test Koto.slnx --no-build -c Release --logger "console;verbosity=minimal"
 
       - name: Pack
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
-          dotnet pack --no-build -c Release /p:Version=$VERSION -o ./artifacts
+          dotnet pack Koto.slnx --no-build -c Release /p:Version=$VERSION -o ./artifacts
 
       - name: Push to NuGet
         if: startsWith(github.ref, 'refs/tags/v')

@@ -5,7 +5,7 @@ namespace Koto.Domain;
 /// to collect <see cref="IDomainEvent"/>s raised during a business operation.
 /// </summary>
 /// <typeparam name="TId">The type of the aggregate identifier.</typeparam>
-public abstract class AggregateRoot<TId> : Entity<TId>
+public abstract class AggregateRoot<TId> : Entity<TId>, IHasDomainEvents
     where TId : notnull
 {
     private readonly List<IDomainEvent> _domainEvents = [];

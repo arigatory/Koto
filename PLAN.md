@@ -16,12 +16,12 @@
 | `Koto.Validation` | [docs/packages/03-validation.md](docs/packages/03-validation.md) | DONE |
 
 ### Phase 2 — Infrastructure
-**Status: NOT STARTED**
+**Status: DONE**
 | Пакет | План | Статус |
 |---|---|---|
-| `Koto.Infrastructure.EFCore` | [docs/packages/04-efcore.md](docs/packages/04-efcore.md) | NOT STARTED |
-| `Koto.Infrastructure.Http` | [docs/packages/05-http.md](docs/packages/05-http.md) | NOT STARTED |
-| `Koto.EventSourcing.Marten` | [docs/packages/06-marten.md](docs/packages/06-marten.md) | NOT STARTED |
+| `Koto.Infrastructure.EFCore` | [docs/packages/04-efcore.md](docs/packages/04-efcore.md) | DONE |
+| `Koto.Infrastructure.Http` | [docs/packages/05-http.md](docs/packages/05-http.md) | DONE |
+| `Koto.EventSourcing.Marten` | [docs/packages/06-marten.md](docs/packages/06-marten.md) | DONE |
 
 ### Phase 3 — Messaging + API
 **Status: NOT STARTED**

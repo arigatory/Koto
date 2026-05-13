@@ -5,7 +5,12 @@
     <PackageId>Koto.Validation</PackageId>
     <Description>FluentValidation v7 extensions for Koto: MustBeValueObject, MustBeEntity, ListMustContainNumberOfItems, and ValidationBehavior pipeline integration.</Description>
     <PackageTags>ddd;fluentvalidation;validation;pipeline;valueobject;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />
