@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Koto.Api.FastEndpoints</PackageId>
+    <Description>FastEndpoints integration for Koto: CQRS base endpoints, RFC 7807 Problem Details from Error, correlation ID middleware, and global exception handler.</Description>
+    <PackageTags>ddd;fastendpoints;cqrs;api;problem-details;microservices;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FastEndpoints" Version="5.35.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
+  </ItemGroup>
+
+</Project>
