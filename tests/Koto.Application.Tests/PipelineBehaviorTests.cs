@@ -64,6 +64,20 @@ public class PipelineBehaviorTests
             Task.FromResult(Result<int>.Success(q.Value));
     }
 
+    private sealed record FailCmd : ICommand<int>;
+    private sealed class FailCmdHandler : ICommandHandler<FailCmd, int>
+    {
+        public Task<Result<int>> HandleAsync(FailCmd cmd, CancellationToken ct = default) =>
+            Task.FromResult(Result<int>.Failure(new Error("test.command.failed", "nope")));
+    }
+
+    private sealed record ThrowCmd : ICommand<int>;
+    private sealed class ThrowCmdHandler : ICommandHandler<ThrowCmd, int>
+    {
+        public Task<Result<int>> HandleAsync(ThrowCmd cmd, CancellationToken ct = default) =>
+            throw new InvalidOperationException("boom");
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private static ICqrsDispatcher Build(Action<IServiceCollection> configure)
@@ -137,5 +151,41 @@ public class PipelineBehaviorTests
         await dispatcher.QueryAsync<int>(new TheQuery(1));
 
         uow.Calls.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TransactionBehavior_rolls_back_on_failure_result()
+    {
+        var uow = new FakeUow();
+        var dispatcher = Build(s =>
+        {
+            s.AddTransient<ICommandHandler<FailCmd, int>, FailCmdHandler>();
+            s.AddSingleton<IUnitOfWork>(uow);
+            s.AddSingleton(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+        });
+
+        var result = await dispatcher.SendAsync<int>(new FailCmd());
+
+        result.IsFailure.Should().BeTrue();
+        uow.Calls.Should().ContainInOrder("begin", "rollback");
+        uow.Calls.Should().NotContain("commit");
+    }
+
+    [Fact]
+    public async Task TransactionBehavior_rolls_back_and_rethrows_on_exception()
+    {
+        var uow = new FakeUow();
+        var dispatcher = Build(s =>
+        {
+            s.AddTransient<ICommandHandler<ThrowCmd, int>, ThrowCmdHandler>();
+            s.AddSingleton<IUnitOfWork>(uow);
+            s.AddSingleton(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+        });
+
+        var act = async () => await dispatcher.SendAsync<int>(new ThrowCmd());
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        uow.Calls.Should().ContainInOrder("begin", "rollback");
+        uow.Calls.Should().NotContain("commit");
     }
 }

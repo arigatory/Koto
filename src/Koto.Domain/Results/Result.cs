@@ -7,7 +7,7 @@ namespace Koto.Domain;
 /// implicit conversions from <typeparamref name="T"/> and <see cref="Domain.Error"/>.
 /// </summary>
 /// <typeparam name="T">The type of the success value.</typeparam>
-public sealed class Result<T>
+public sealed class Result<T> : IResultBase
 {
     private readonly T? _value;
     private readonly Error? _error;

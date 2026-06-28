@@ -103,6 +103,26 @@ public readonly record struct OrderId(Guid Value)
 
 Prevents confusing `OrderId` с `CustomerId` на уровне компилятора.
 
+## Создание агрегатов — только через фабричные методы
+
+`Entity<TId>.Id` имеет `protected set`, а конструкторы агрегатов — `protected`. Это сделано намеренно
+(Always Valid Domain Model): нельзя создать невалидный агрегат снаружи и нельзя через
+object-initializer (`new Order { Id = ... }`). Создавайте через статический фабричный метод, который
+возвращает `Result<T>`:
+
+```csharp
+public sealed class Order : AggregateRoot<OrderId>
+{
+    private Order() { }                                  // для EF/ORM
+    private Order(OrderId id, CustomerId customer) : base(id) { /* ... */ }
+
+    public static Result<Order> Create(CustomerId customer) => /* валидация → */ new Order(OrderId.New(), customer);
+}
+```
+
+- **EF Core:** параметрless `protected` ctor + backing fields материализуют агрегат при чтении — публичный сеттер `Id` не нужен.
+- **Тесты:** строьте агрегаты тем же фабричным методом (или test-builder, вызывающим фабрику), а не object-initializer.
+
 ## Domain Services
 
 Используются только когда логика не принадлежит ни одному агрегату:

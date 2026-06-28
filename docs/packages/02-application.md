@@ -35,6 +35,7 @@
 - [ ] `ValidationBehavior<TRequest, TResponse>` — запускает все `IValidator<TRequest>` (FluentValidation v7); при ошибках возвращает `Result.Failure` со всеми ошибками
 - [ ] `LoggingBehavior<TRequest, TResponse>` — structured logging: имя запроса, время выполнения, успех/провал
 - [ ] `TransactionBehavior<TRequest, TResponse>` — оборачивает command в DB транзакцию (только для ICommand, не для IQuery)
+  - **Семантика транзакции:** commit при успешном `Result`; **rollback** при `Result.Failure` (по маркеру `IResultBase.IsFailure`) и при брошенном исключении. То есть handler, который мутировал tracked-состояние, а затем вернул `Result.Failure`, **не** закоммитит изменения. Тем не менее предпочтительно валидировать до мутаций.
 
 ### Cross-service abstractions
 - [ ] `IIntegrationEvent` — `Guid EventId`, `DateTime OccurredAt`, `string? CorrelationId`
@@ -55,3 +56,4 @@
 - [ ] ValidationBehavior: возвращает Failure при ошибках валидации, собирает все ошибки
 - [ ] LoggingBehavior: логирует start/end с timing
 - [ ] TransactionBehavior: не применяется к queries
+- [x] TransactionBehavior: commit при успехе, rollback при `Result.Failure`, rollback + rethrow при исключении

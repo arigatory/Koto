@@ -11,6 +11,12 @@ public abstract class AggregateRoot<TId> : Entity<TId>, IHasDomainEvents
     private readonly List<IDomainEvent> _domainEvents = [];
 
     /// <summary>Domain events raised since the last <see cref="ClearDomainEvents"/> call.</summary>
+    /// <remarks>
+    /// EF Core already skips this get-only collection by convention; the explicit
+    /// <see cref="System.ComponentModel.DataAnnotations.Schema.NotMappedAttribute"/> documents the
+    /// intent and guards against non-standard mappers attempting to persist it.
+    /// </remarks>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     /// <summary>Initializes a new aggregate root with the given <paramref name="id"/>.</summary>

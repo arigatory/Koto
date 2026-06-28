@@ -1,13 +1,12 @@
 using FastEndpoints;
-using Koto.Api.FastEndpoints.Middleware;
-using Koto.Api.FastEndpoints.ProblemDetails;
-using Microsoft.AspNetCore.Http;
 
 namespace Koto.Api.FastEndpoints.Endpoints;
 
 /// <summary>
 /// Base endpoint for void commands (returns 204 No Content on success).
 /// Subclass, implement <c>HandleAsync</c> and call <see cref="SendCommandAsync"/>.
+/// Use <see cref="MappedCommandEndpoint{TRequest,TCommand}"/> instead when the command carries
+/// server-derived fields that must not be bound from the request.
 /// </summary>
 /// <typeparam name="TCommand">The command type; also used as the HTTP request model.</typeparam>
 public abstract class CommandEndpoint<TCommand> : Endpoint<TCommand>
@@ -17,20 +16,15 @@ public abstract class CommandEndpoint<TCommand> : Endpoint<TCommand>
     /// Dispatches <paramref name="command"/> via <see cref="Application.ICqrsDispatcher"/>.
     /// On success sends 204 No Content. On failure sends RFC 7807 Problem Details.
     /// </summary>
-    protected async Task SendCommandAsync(TCommand command, CancellationToken ct)
-    {
-        var result = await Resolve<Application.ICqrsDispatcher>().SendAsync(command, ct);
-        if (result.IsFailure)
-            await HttpContext.Response.SendResultAsync(
-                KotoProblemDetails.From(result.Error, CorrelationContext.Current.Value));
-        else
-            await HttpContext.Response.SendNoContentAsync(ct);
-    }
+    protected Task SendCommandAsync(TCommand command, CancellationToken ct) =>
+        this.SendDispatchAsync(Resolve<Application.ICqrsDispatcher>().SendAsync(command, ct), ct);
 }
 
 /// <summary>
 /// Base endpoint for commands that return a result (returns 200 OK with <typeparamref name="TResult"/> on success).
 /// Subclass, implement <c>HandleAsync</c> and call <see cref="SendCommandAsync"/>.
+/// Use <see cref="MappedCommandEndpoint{TRequest,TCommand,TResult}"/> instead when the command carries
+/// server-derived fields that must not be bound from the request.
 /// </summary>
 /// <typeparam name="TCommand">The command type; also used as the HTTP request model.</typeparam>
 /// <typeparam name="TResult">The success response body type.</typeparam>
@@ -41,13 +35,6 @@ public abstract class CommandEndpoint<TCommand, TResult> : Endpoint<TCommand, TR
     /// Dispatches <paramref name="command"/> via <see cref="Application.ICqrsDispatcher"/>.
     /// On success sends 200 OK with the result. On failure sends RFC 7807 Problem Details.
     /// </summary>
-    protected async Task SendCommandAsync(TCommand command, CancellationToken ct)
-    {
-        var result = await Resolve<Application.ICqrsDispatcher>().SendAsync<TResult>(command, ct);
-        if (result.IsFailure)
-            await HttpContext.Response.SendResultAsync(
-                KotoProblemDetails.From(result.Error, CorrelationContext.Current.Value));
-        else
-            await HttpContext.Response.SendOkAsync(result.Value, cancellation: ct);
-    }
+    protected Task SendCommandAsync(TCommand command, CancellationToken ct) =>
+        this.SendDispatchAsync(Resolve<Application.ICqrsDispatcher>().SendAsync<TResult>(command, ct), ct);
 }
