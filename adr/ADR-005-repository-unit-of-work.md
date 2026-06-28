@@ -65,7 +65,7 @@ public interface IRepository<TAgg, TId>
 
 ```csharp
 // Обработчик команды (прикладной слой):
-public async Task<Result<Unit, Error>> HandleAsync(CancelOrderCommand cmd, CancellationToken ct)
+public async Task<Result<Unit>> HandleAsync(CancelOrderCommand cmd, CancellationToken ct)
 {
     var order = await _orderRepo.GetByIdAsync(cmd.OrderId, ct);
     if (order is null) return Errors.General.NotFound("order", cmd.OrderId);

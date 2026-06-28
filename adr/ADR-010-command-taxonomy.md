@@ -179,7 +179,7 @@ HTTP-вызовы между сервисами реализуются чере�
 // Определяется в Application или Domain; реализация — в Infrastructure
 public interface IPaymentService
 {
-    Task<Result<PaymentId, Error>> ChargeAsync(Money amount, CancellationToken ct);
+    Task<Result<PaymentId>> ChargeAsync(Money amount, CancellationToken ct);
 }
 ```
 

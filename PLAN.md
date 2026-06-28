@@ -83,13 +83,16 @@
 
 ---
 
-## ⚠️ ADR — требуют обновления
+## ADR — статус
 
-Реализация завершена, ADR отражают ранние решения. Расхождения с кодом:
+Долг по ADR закрыт (2026-06-29). Итог проверки исходного списка против кода:
 
-- [ ] Унифицировать сигнатуру `Result<T>` (один параметр, не `Result<T, Error>`) в ADR 001, 002, 004, 005, 009
-- [ ] Заменить `UseSqlServer` → `UseNpgsql` в ADR-006 и ADR-013
-- [ ] Исправить факт о лицензии FluentValidation v8 в ADR-009
-- [ ] Убрать `Koto.Contracts` из ADR-010, зафиксировать `Koto.Application`
-- [ ] Согласовать `IIntegrationEvent` (интерфейс) vs `IntegrationEvent` (abstract record) в ADR-010/011
-- [ ] Задокументировать `Koto.Messaging.Wolverine`, `Koto.Api.FastEndpoints`, `Koto.Observability`, `Koto.Testing`, `Koto.Scheduling` — этих ADR ещё нет
+- [x] Унифицировать сигнатуру `Result<T>` (один параметр, не `Result<T, Error>`) в ADR-001/002/004/005/009/010 + CLAUDE.md. Оставлены `Result<T, E>` только там, где описывается отвергнутая альтернатива (CSharpFunctionalExtensions).
+- [x] Лицензия FluentValidation: ADR-009 был **верен** (Apache 2.0 на всех версиях). Ошибка была в CLAUDE.md и memory (путаница с FluentAssertions) — исправлено.
+- [x] Написаны недостающие ADR: **ADR-017** (Koto.Observability), **ADR-018** (Koto.Testing), **ADR-019** (Koto.Infrastructure.Http).
+- [x] ~~`UseSqlServer` → `UseNpgsql`~~ — уже было корректно (`UseSqlServer` нигде нет).
+- [x] ~~Убрать `Koto.Contracts` из ADR-010~~ — упоминаний `Koto.Contracts` нет; уже `Koto.Application`.
+- [x] ~~`IIntegrationEvent` vs `IntegrationEvent`~~ — уже согласовано (интерфейс + abstract record), соответствует коду.
+- ℹ️ ADR для Wolverine/FastEndpoints/Scheduling уже существуют (006/008/014) — в исходном списке были перечислены ошибочно.
+
+**Опциональный остаток (не входил в этот проход):** мелкий дрейф API в ADR-014 (`KotoJob` → `ScheduledJobBase`/`BatchJobBase`, `UsePersistentStore` → `UseJobStore`) и ADR-008 (не упоминает `MappedCommandEndpoint`/`MappedQueryEndpoint` из v0.2). Освежить при следующем касании этих пакетов.

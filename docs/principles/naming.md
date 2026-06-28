@@ -42,7 +42,7 @@ Koto.Testing
 ## Методы агрегата
 
 - Поведение: глагол в повелительном наклонении — `Place()`, `Cancel()`, `AddItem()`, `Confirm()`.
-- Фабричный метод: `Create(...)` возвращает `Result<TAgg, Error>`.
+- Фабричный метод: `Create(...)` возвращает `Result<TAgg>`.
 - Применение события (event sourcing): `Apply(TEvent event)` — private или protected.
 
 ## События

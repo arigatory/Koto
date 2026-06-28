@@ -7,7 +7,7 @@
 
 ## 1. Контекст
 
-В проектах Koto применяется подход **«Always Valid Domain Model»**: вся логика валидации инкапсулирована в фабричных методах доменных объектов (`Email.Create`, `OrderId.Create` и т. д.). Метод фабрики возвращает `Result<T, Error>` — либо корректно созданный объект-значение, либо структурированную ошибку.
+В проектах Koto применяется подход **«Always Valid Domain Model»**: вся логика валидации инкапсулирована в фабричных методах доменных объектов (`Email.Create`, `OrderId.Create` и т. д.). Метод фабрики возвращает `Result<T>` — либо корректно созданный объект-значение, либо структурированную ошибку.
 
 Параллельно на уровне API использовалась библиотека **FluentValidation** для валидации входящих DTO. Это порождало дублирование: правила валидации прописывались дважды — в доменном фабричном методе и в валидаторе FluentValidation.
 
@@ -25,7 +25,7 @@
 |---|---|
 | Единая точка истины | Логика валидации должна быть описана ровно один раз — в доменном фабричном методе |
 | Интеграция с FluentValidation | Паттерн `MustBeValueObject` должен вызывать фабричный метод и преобразовывать `Error` в сообщение об ошибке FluentValidation |
-| Поддержка объектов-значений | Метод `MustBeValueObject` должен работать с любым фабричным методом сигнатуры `Func<string, Result<T, Error>>` |
+| Поддержка объектов-значений | Метод `MustBeValueObject` должен работать с любым фабричным методом сигнатуры `Func<string, Result<T>>` |
 | Поддержка сущностей | Метод `MustBeEntity` должен поддерживать фабрики с несколькими полями для построения сущностей |
 | Коллекции | Метод `ListMustContainNumberOfItems(min, max)` должен проверять количество элементов с использованием `Errors.General` для консистентных сообщений |
 | Перегрузки с `Errors.General` | Перегрузки `NotEmpty()` и `Length()` должны сериализовывать ошибки через `Errors.General` для единообразного формата |
@@ -80,7 +80,7 @@ RuleFor(x => x.Email)
 // Основной метод: строка → объект-значение через фабрику
 public static IRuleBuilderOptions<T, string> MustBeValueObject<T, TValueObject>(
     this IRuleBuilder<T, string> ruleBuilder,
-    Func<string, Result<TValueObject, Error>> factory)
+    Func<string, Result<TValueObject>> factory)
     where TValueObject : class
 {
     return (IRuleBuilderOptions<T, string>)ruleBuilder.Custom((value, context) =>
@@ -94,7 +94,7 @@ public static IRuleBuilderOptions<T, string> MustBeValueObject<T, TValueObject>(
 // Для сущностей с несколькими полями
 public static IRuleBuilderOptions<T, TElement> MustBeEntity<T, TElement, TEntity>(
     this IRuleBuilder<T, TElement> ruleBuilder,
-    Func<TElement, Result<TEntity, Error>> factory)
+    Func<TElement, Result<TEntity>> factory)
     where TEntity : class
 {
     return (IRuleBuilderOptions<T, TElement>)ruleBuilder.Custom((value, context) =>
@@ -178,7 +178,7 @@ public static IRuleBuilderOptions<T, string> Length<T>(
 - Разработчики, привыкшие к `v8+` или Validot, должны адаптироваться к API v7
 
 **Зависимости:**
-- `Koto.Validation` зависит от `Koto.Domain` (для типов `Result<T, Error>` и `Errors.General`)
+- `Koto.Validation` зависит от `Koto.Domain` (для типов `Result<T>` и `Errors.General`)
 - Все API-проекты, использующие FluentValidation, должны ссылаться на `Koto.Validation`, а не напрямую на FluentValidation
 - Будущие решения об изменении механизма валидации на API-границе требуют нового ADR
 

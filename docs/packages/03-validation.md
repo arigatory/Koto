@@ -7,7 +7,7 @@
 
 ## Цель
 
-Мост между FluentValidation и паттерном `Result<T, Error>`. Валидационная логика живёт один раз — в фабричных методах домена. FluentValidation просто вызывает их.
+Мост между FluentValidation и паттерном `Result<T>`. Валидационная логика живёт один раз — в фабричных методах домена. FluentValidation просто вызывает их.
 
 ## Пример использования
 
@@ -35,8 +35,8 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 ## Checklist
 
 ### FluentValidation Extensions (static class `KotoValidators`)
-- [ ] `MustBeValueObject<T, TValueObject>(Func<string, Result<TValueObject, Error>> factory)` — вызывает factory, при IsFailure добавляет `result.Error.Serialize()` как validation failure
-- [ ] `MustBeEntity<T, TElement, TEntity>(Func<TElement, Result<TEntity, Error>> factory)` — то же для составных объектов
+- [ ] `MustBeValueObject<T, TValueObject>(Func<string, Result<TValueObject>> factory)` — вызывает factory, при IsFailure добавляет `result.Error.Serialize()` как validation failure
+- [ ] `MustBeEntity<T, TElement, TEntity>(Func<TElement, Result<TEntity>> factory)` — то же для составных объектов
 - [ ] `ListMustContainNumberOfItems<T, TElement>(int? min, int? max)` — использует `Errors.General.CollectionIsTooSmall/Large`
 
 ### Overloads стандартных правил (для единообразия сообщений)

@@ -14,7 +14,7 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - ORM: **EF Core 10**
 - API: **FastEndpoints**
 - Observability: Serilog + OpenTelemetry .NET
-- Validation: FluentValidation **v7** (pinned — v8+ коммерческий)
+- Validation: FluentValidation **v7** (pinned — для стабильности API; FluentValidation под Apache 2.0 на всех версиях)
 - Testing: xUnit + NSubstitute + AwesomeAssertions + Testcontainers.NET
 
 ## Принципы (подробнее в docs/principles/)
@@ -23,7 +23,7 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Агрегат — единственная точка изменения состояния. Никаких прямых изменений через репозиторий.
 - `AggregateRoot<TId>` хранит uncommitted domain events; диспатч через Wolverine outbox.
 - Value Object = `record` (простые) или `ValueObject` abstract base (кастомная equality).
-- Валидация живёт в фабричных методах: `Email.Create(string) → Result<Email, Error>`.
+- Валидация живёт в фабричных методах: `Email.Create(string) → Result<Email>`.
 - Репозиторий: `Add`/`Delete` — синхронные (change tracker), `GetByIdAsync` — async. Коммит = зона UoW.
 
 ### Result и Error
@@ -47,6 +47,9 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 ### Лицензионные ловушки (не использовать)
 - MediatR v13+ → коммерческий (v12 = MIT, можно пинить)
 - MassTransit v9+ → коммерческий (v8 = Apache 2.0)
-- FluentValidation v8+ → коммерческий (v7 = Apache 2.0)
-- FluentAssertions v8+ → заменён на **AwesomeAssertions**
+- FluentAssertions v8+ → коммерческий (Xceed) → заменён на **AwesomeAssertions**
 - EventStoreDB v24.10+ → ESLv2, использовать **Marten**
+
+> ⚠️ **FluentValidation — НЕ ловушка.** Apache 2.0 на всех версиях (включая v12). v7 пиннится
+> только ради стабильности API (см. ADR-009), не из-за лицензии. Не путать с **FluentAssertions**,
+> которая действительно ушла в коммерцию в v8.

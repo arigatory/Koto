@@ -15,7 +15,7 @@ Anti-Corruption Layer для синхронных HTTP-вызовов к дру�
 // Application layer (Koto.Domain / Application):
 public interface IPaymentService
 {
-    Task<Result<PaymentId, Error>> ChargeAsync(Money amount, CancellationToken ct);
+    Task<Result<PaymentId>> ChargeAsync(Money amount, CancellationToken ct);
 }
 
 // Infrastructure layer (реализация):
@@ -23,7 +23,7 @@ public class PaymentServiceHttpClient : ServiceHttpClient, IPaymentService
 {
     public PaymentServiceHttpClient(HttpClient http) : base(http) { }
 
-    public async Task<Result<PaymentId, Error>> ChargeAsync(Money amount, CancellationToken ct)
+    public async Task<Result<PaymentId>> ChargeAsync(Money amount, CancellationToken ct)
     {
         var response = await Http.PostAsJsonAsync("/charges", new { Amount = amount.Amount, Currency = amount.Currency }, ct);
         return await ReadResultAsync<PaymentId>(response, ct);
@@ -41,7 +41,7 @@ services.AddServiceHttpClient<IPaymentService, PaymentServiceHttpClient>(
 ### ServiceHttpClient
 - [ ] `ServiceHttpClient` — abstract base class:
   - `protected HttpClient Http { get; }` — инжектируется через конструктор
-  - `protected Task<Result<T, Error>> ReadResultAsync<T>(HttpResponseMessage response, CancellationToken ct)` — десериализует успешный ответ или маппирует ошибку
+  - `protected Task<Result<T>> ReadResultAsync<T>(HttpResponseMessage response, CancellationToken ct)` — десериализует успешный ответ или маппирует ошибку
   - `protected virtual Error MapErrorResponse(HttpResponseMessage response, string? body)` — виртуальный, можно переопределить:
     - 404 → `Errors.General.NotFound(...)`
     - 409 → Conflict error

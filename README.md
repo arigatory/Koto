@@ -125,7 +125,7 @@ dotnet new koto-microservice --name OrderService --arch clean
 
 **Always valid.** Domain objects cannot be constructed in an invalid state. Validation lives in factory methods, not in validators.
 
-**Explicit errors.** No exceptions for expected failures. `Result<T, Error>` flows through the entire stack — from domain to HTTP response.
+**Explicit errors.** No exceptions for expected failures. `Result<T>` flows through the entire stack — from domain to HTTP response.
 
 **One source of truth.** Validation rules live once — in the domain. FluentValidation calls them, not duplicates them.
 

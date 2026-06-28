@@ -120,7 +120,7 @@ HTTP Request
         → IRepository.Add(aggregate)
         → DbContext.SaveChangesAsync()
           → Wolverine Outbox: {data + event} → one commit
-  ← Result<T, Error>
+  ← Result<T>
   ← HTTP Response (200 / ProblemDetails)
 
 Wolverine (async, from outbox):
