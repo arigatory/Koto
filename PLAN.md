@@ -5,6 +5,14 @@
 
 ---
 
+## История релизов
+
+- **v0.2.0-preview.1** — `Koto.Api.FastEndpoints`: `MappedCommandEndpoint`/`MappedQueryEndpoint`
+  (request DTO ≠ command, server-derived поля вне контракта) + `ClaimsPrincipal.GetUserId()`.
+  `Koto.Application`: `TransactionBehavior` теперь делает rollback при `Result.Failure`
+  (маркер `Koto.Domain.IResultBase`). `AggregateRoot.DomainEvents` помечен `[NotMapped]`.
+- **v0.1.0-preview.x** — Phase 1–4 (см. ниже).
+
 ## Фазы
 
 ### Phase 1 — Domain Core

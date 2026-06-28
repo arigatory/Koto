@@ -1,6 +1,6 @@
 # Koto.Api.FastEndpoints — Plan
 
-**Phase:** 3 | **Status:** NOT STARTED
+**Phase:** 3 | **Status:** DONE (mapped endpoints + claims helper — v0.2.0-preview.1)
 **Depends on:** Koto.Application + FastEndpoints (MIT)
 
 ---
