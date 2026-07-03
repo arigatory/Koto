@@ -54,4 +54,29 @@ public class EntityTests
 
         product.Equals(product).Should().BeTrue();
     }
+
+    [Fact]
+    public void Transient_entities_with_default_id_are_not_equal()
+    {
+        var a = new Product(Guid.Empty);
+        var b = new Product(Guid.Empty);
+
+        a.IsTransient.Should().BeTrue();
+        a.Equals(b).Should().BeFalse();
+        (a == b).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Transient_entity_is_still_equal_to_itself()
+    {
+        var a = new Product(Guid.Empty);
+
+        a.Equals(a).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Entity_with_assigned_id_is_not_transient()
+    {
+        new Product(Guid.NewGuid()).IsTransient.Should().BeFalse();
+    }
 }

@@ -64,6 +64,22 @@ public sealed class ResultAssertions<T> : ReferenceTypeAssertions<Result<T>, Res
         return new AndConstraint<ResultAssertions<T>>(this);
     }
 
+    /// <summary>
+    /// Asserts that the result is a failure carrying exactly the specified error codes, in order.
+    /// </summary>
+    public AndConstraint<ResultAssertions<T>> HaveErrors(params string[] errorCodes)
+    {
+        CurrentAssertionChain
+            .ForCondition(Subject.IsFailure)
+            .FailWith("Expected result to be a failure with codes {0}, but it succeeded.", errorCodes)
+            .Then
+            .ForCondition(Subject.Errors.Select(e => e.Code).SequenceEqual(errorCodes))
+            .FailWith("Expected result error codes to be {0}, but found {1}.",
+                errorCodes, Subject.Errors.Select(e => e.Code).ToArray());
+
+        return new AndConstraint<ResultAssertions<T>>(this);
+    }
+
     /// <summary>Asserts that the result is a success with the specified value.</summary>
     public AndConstraint<ResultAssertions<T>> HaveValue(
         T expected, string because = "", params object[] becauseArgs)
