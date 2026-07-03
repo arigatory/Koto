@@ -5,9 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Koto.Application;
 
 /// <summary>
-/// Default <see cref="ICqrsDispatcher"/> implementation. Resolves handlers from DI and
-/// runs them through the <see cref="IPipelineBehavior{TRequest,TResponse}"/> chain.
-/// Handler type resolution is cached after the first call per command/query type.
+/// Default <see cref="ICqrsDispatcher"/> implementation. Resolves the handler and the
+/// <see cref="IPipelineBehavior{TRequest,TResponse}"/> chain from DI using the CONCRETE
+/// command/query type (so open-generic behaviors such as <c>ValidationBehavior&lt;,&gt;</c>
+/// close over the actual command and can resolve e.g. <c>IValidator&lt;CreateUserCommand&gt;</c>).
+/// Invoker construction is reflection-based but cached after the first call per type.
 /// </summary>
 public sealed class CqrsDispatcher : ICqrsDispatcher
 {
@@ -23,112 +25,107 @@ public sealed class CqrsDispatcher : ICqrsDispatcher
     /// <inheritdoc/>
     public async Task<Result<Unit>> SendAsync(ICommand command, CancellationToken ct = default)
     {
-        var commandType = command.GetType();
-        var handlerType = typeof(ICommandHandler<>).MakeGenericType(commandType);
-        var handler = _services.GetRequiredService(handlerType);
-        var invoker = _voidInvokers.GetOrAdd(commandType, t =>
+        ArgumentNullException.ThrowIfNull(command);
+        var invoker = _voidInvokers.GetOrAdd(command.GetType(), t =>
             (VoidCommandInvoker)Activator.CreateInstance(
                 typeof(VoidCommandInvokerImpl<>).MakeGenericType(t))!);
-
-        var behaviors = _services
-            .GetServices<IPipelineBehavior<ICommand, Result<Unit>>>()
-            .ToList();
-
-        Func<Task<Result<Unit>>> execute = () => invoker.InvokeAsync(command, handler, ct);
-        for (var i = behaviors.Count - 1; i >= 0; i--)
-        {
-            var b = behaviors[i];
-            var next = execute;
-            execute = () => b.HandleAsync(command, next, ct);
-        }
-        return await execute();
+        return await invoker.InvokeAsync(command, _services, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async Task<Result<TResult>> SendAsync<TResult>(ICommand<TResult> command, CancellationToken ct = default)
     {
-        var commandType = command.GetType();
-        var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, typeof(TResult));
-        var handler = _services.GetRequiredService(handlerType);
+        ArgumentNullException.ThrowIfNull(command);
         var invoker = (ResultCommandInvoker<TResult>)_resultInvokers.GetOrAdd(
-            (commandType, typeof(TResult)),
+            (command.GetType(), typeof(TResult)),
             key => Activator.CreateInstance(
                 typeof(ResultCommandInvokerImpl<,>).MakeGenericType(key.Item1, key.Item2))!);
-
-        var behaviors = _services
-            .GetServices<IPipelineBehavior<ICommand<TResult>, Result<TResult>>>()
-            .ToList();
-
-        Func<Task<Result<TResult>>> execute = () => invoker.InvokeAsync(command, handler, ct);
-        for (var i = behaviors.Count - 1; i >= 0; i--)
-        {
-            var b = behaviors[i];
-            var next = execute;
-            execute = () => b.HandleAsync(command, next, ct);
-        }
-        return await execute();
+        return await invoker.InvokeAsync(command, _services, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async Task<Result<TResult>> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default)
     {
-        var queryType = query.GetType();
-        var handlerType = typeof(IQueryHandler<,>).MakeGenericType(queryType, typeof(TResult));
-        var handler = _services.GetRequiredService(handlerType);
+        ArgumentNullException.ThrowIfNull(query);
         var invoker = (QueryInvoker<TResult>)_queryInvokers.GetOrAdd(
-            (queryType, typeof(TResult)),
+            (query.GetType(), typeof(TResult)),
             key => Activator.CreateInstance(
                 typeof(QueryInvokerImpl<,>).MakeGenericType(key.Item1, key.Item2))!);
-
-        var behaviors = _services
-            .GetServices<IPipelineBehavior<IQuery<TResult>, Result<TResult>>>()
-            .ToList();
-
-        Func<Task<Result<TResult>>> execute = () => invoker.InvokeAsync(query, handler, ct);
-        for (var i = behaviors.Count - 1; i >= 0; i--)
-        {
-            var b = behaviors[i];
-            var next = execute;
-            execute = () => b.HandleAsync(query, next, ct);
-        }
-        return await execute();
+        return await invoker.InvokeAsync(query, _services, ct).ConfigureAwait(false);
     }
 
-    // ── Invoker abstractions (avoid reflection on every dispatch after first call) ──
+    /// <summary>
+    /// Builds the behavior→handler execution chain for a concrete request type.
+    /// Behaviors run in registration order: the first registered behavior is outermost.
+    /// </summary>
+    private static Func<Task<TResponse>> BuildChain<TRequest, TResponse>(
+        TRequest request,
+        IServiceProvider services,
+        Func<Task<TResponse>> handler,
+        CancellationToken ct)
+        where TRequest : notnull
+    {
+        var behaviors = services.GetServices<IPipelineBehavior<TRequest, TResponse>>().ToArray();
+        var execute = handler;
+        for (var i = behaviors.Length - 1; i >= 0; i--)
+        {
+            var behavior = behaviors[i];
+            var next = execute;
+            execute = () => behavior.HandleAsync(request, next, ct);
+        }
+        return execute;
+    }
+
+    // ── Invokers: close over the concrete request type once, then cached ──
 
     private abstract class VoidCommandInvoker
     {
-        public abstract Task<Result<Unit>> InvokeAsync(ICommand command, object handler, CancellationToken ct);
+        public abstract Task<Result<Unit>> InvokeAsync(ICommand command, IServiceProvider services, CancellationToken ct);
     }
 
     private sealed class VoidCommandInvokerImpl<TCommand> : VoidCommandInvoker
         where TCommand : ICommand
     {
-        public override Task<Result<Unit>> InvokeAsync(ICommand command, object handler, CancellationToken ct) =>
-            ((ICommandHandler<TCommand>)handler).HandleAsync((TCommand)command, ct);
+        public override Task<Result<Unit>> InvokeAsync(ICommand command, IServiceProvider services, CancellationToken ct)
+        {
+            var typed = (TCommand)command;
+            var handler = services.GetRequiredService<ICommandHandler<TCommand>>();
+            return BuildChain<TCommand, Result<Unit>>(
+                typed, services, () => handler.HandleAsync(typed, ct), ct)();
+        }
     }
 
     private abstract class ResultCommandInvoker<TResult>
     {
-        public abstract Task<Result<TResult>> InvokeAsync(ICommand<TResult> command, object handler, CancellationToken ct);
+        public abstract Task<Result<TResult>> InvokeAsync(ICommand<TResult> command, IServiceProvider services, CancellationToken ct);
     }
 
     private sealed class ResultCommandInvokerImpl<TCommand, TResult> : ResultCommandInvoker<TResult>
         where TCommand : ICommand<TResult>
     {
-        public override Task<Result<TResult>> InvokeAsync(ICommand<TResult> command, object handler, CancellationToken ct) =>
-            ((ICommandHandler<TCommand, TResult>)handler).HandleAsync((TCommand)command, ct);
+        public override Task<Result<TResult>> InvokeAsync(ICommand<TResult> command, IServiceProvider services, CancellationToken ct)
+        {
+            var typed = (TCommand)command;
+            var handler = services.GetRequiredService<ICommandHandler<TCommand, TResult>>();
+            return BuildChain<TCommand, Result<TResult>>(
+                typed, services, () => handler.HandleAsync(typed, ct), ct)();
+        }
     }
 
     private abstract class QueryInvoker<TResult>
     {
-        public abstract Task<Result<TResult>> InvokeAsync(IQuery<TResult> query, object handler, CancellationToken ct);
+        public abstract Task<Result<TResult>> InvokeAsync(IQuery<TResult> query, IServiceProvider services, CancellationToken ct);
     }
 
     private sealed class QueryInvokerImpl<TQuery, TResult> : QueryInvoker<TResult>
         where TQuery : IQuery<TResult>
     {
-        public override Task<Result<TResult>> InvokeAsync(IQuery<TResult> query, object handler, CancellationToken ct) =>
-            ((IQueryHandler<TQuery, TResult>)handler).HandleAsync((TQuery)query, ct);
+        public override Task<Result<TResult>> InvokeAsync(IQuery<TResult> query, IServiceProvider services, CancellationToken ct)
+        {
+            var typed = (TQuery)query;
+            var handler = services.GetRequiredService<IQueryHandler<TQuery, TResult>>();
+            return BuildChain<TQuery, Result<TResult>>(
+                typed, services, () => handler.HandleAsync(typed, ct), ct)();
+        }
     }
 }

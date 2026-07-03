@@ -23,7 +23,7 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
         var sw = Stopwatch.StartNew();
         try
         {
-            var response = await next();
+            var response = await next().ConfigureAwait(false);
             _logger.LogInformation("Handled {Request} in {Elapsed}ms", name, sw.ElapsedMilliseconds);
             return response;
         }

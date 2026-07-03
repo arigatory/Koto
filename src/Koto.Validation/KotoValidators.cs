@@ -1,86 +1,101 @@
 using FluentValidation;
+using FluentValidation.Results;
 using Koto.Domain;
 
 namespace Koto.Validation;
 
 /// <summary>
 /// FluentValidation extension methods that delegate to domain factory methods,
-/// keeping validation logic in one place (the domain model).
+/// keeping validation logic in one place (the domain model). Each domain
+/// <see cref="Error"/> travels as structured state (<see cref="ValidationFailure.CustomState"/>
+/// + <see cref="ValidationFailure.ErrorCode"/>) so the pipeline can surface real error
+/// codes per field instead of concatenated message strings.
 /// </summary>
 public static class KotoValidators
 {
     /// <summary>
-    /// Validates a <see cref="string"/> property by invoking a value-object factory.
-    /// The validation failure message is set to <see cref="Error.Serialize()"/> on failure.
+    /// Validates a property by invoking a domain value-object factory
+    /// (e.g. <c>RuleFor(x =&gt; x.Email).MustBeValueObject(Email.Create)</c>).
+    /// The validation logic stays in the domain; the validator only calls it.
+    /// Works for any source type: <see cref="string"/>, <see cref="int"/>, <see cref="Guid"/>, …
     /// </summary>
-    public static IRuleBuilderOptions<T, string> MustBeValueObject<T, TValueObject>(
-        this IRuleBuilder<T, string> ruleBuilder,
-        Func<string, Result<TValueObject>> factory)
+    public static IRuleBuilderOptionsConditions<T, TSource> MustBeValueObject<T, TSource, TValueObject>(
+        this IRuleBuilder<T, TSource> ruleBuilder,
+        Func<TSource, Result<TValueObject>> factory)
     {
-        // FV v7: Custom() returns IRuleBuilderInitial; the underlying RuleBuilder<T,P>
-        // implements both interfaces, so the explicit cast is safe.
-        return (IRuleBuilderOptions<T, string>)(object)ruleBuilder.Custom((value, ctx) =>
+        ArgumentNullException.ThrowIfNull(factory);
+        return ruleBuilder.Custom((value, ctx) =>
         {
             var result = factory(value);
-            if (result.IsFailure)
-                ctx.AddFailure(result.Error.Serialize());
+            if (result.IsSuccess) return;
+            foreach (var error in result.Errors)
+                ctx.AddFailure(CreateFailure(ctx.PropertyPath, error));
         });
     }
 
     /// <summary>
-    /// Validates a property of type <typeparamref name="TElement"/> by invoking an entity factory.
-    /// The validation failure message is set to <see cref="Error.Serialize()"/> on failure.
+    /// Validates a property by invoking a domain entity factory. Same contract as
+    /// <see cref="MustBeValueObject{T,TSource,TValueObject}"/> — kept as a separate name
+    /// so validators read naturally for entities.
     /// </summary>
-    public static IRuleBuilderOptions<T, TElement> MustBeEntity<T, TElement, TEntity>(
+    public static IRuleBuilderOptionsConditions<T, TElement> MustBeEntity<T, TElement, TEntity>(
         this IRuleBuilder<T, TElement> ruleBuilder,
         Func<TElement, Result<TEntity>> factory)
-    {
-        return (IRuleBuilderOptions<T, TElement>)(object)ruleBuilder.Custom((value, ctx) =>
-        {
-            var result = factory(value);
-            if (result.IsFailure)
-                ctx.AddFailure(result.Error.Serialize());
-        });
-    }
+        => ruleBuilder.MustBeValueObject(factory);
 
     /// <summary>
     /// Validates that a collection contains between <paramref name="min"/> and <paramref name="max"/> items.
     /// Uses <see cref="Errors.General.CollectionIsTooSmall"/> and <see cref="Errors.General.CollectionIsTooLarge"/>.
     /// </summary>
-    public static IRuleBuilderOptions<T, IEnumerable<TElement>> ListMustContainNumberOfItems<T, TElement>(
+    public static IRuleBuilderOptionsConditions<T, IEnumerable<TElement>> ListMustContainNumberOfItems<T, TElement>(
         this IRuleBuilder<T, IEnumerable<TElement>> ruleBuilder,
         int? min = null,
         int? max = null)
     {
-        return (IRuleBuilderOptions<T, IEnumerable<TElement>>)(object)ruleBuilder.Custom((value, ctx) =>
+        return ruleBuilder.Custom((value, ctx) =>
         {
             var list = value as IList<TElement> ?? value.ToList();
             if (min.HasValue && list.Count < min.Value)
-                ctx.AddFailure(Errors.General.CollectionIsTooSmall(min.Value, list.Count).Serialize());
+                ctx.AddFailure(CreateFailure(ctx.PropertyPath, Errors.General.CollectionIsTooSmall(min.Value, list.Count)));
             else if (max.HasValue && list.Count > max.Value)
-                ctx.AddFailure(Errors.General.CollectionIsTooLarge(max.Value, list.Count).Serialize());
+                ctx.AddFailure(CreateFailure(ctx.PropertyPath, Errors.General.CollectionIsTooLarge(max.Value, list.Count)));
         });
     }
 
     /// <summary>
-    /// Overrides the default "not empty" message with <see cref="Errors.General.ValueIsRequired()"/>.
+    /// Applies <c>NotEmpty</c> with the Koto <see cref="Errors.General.ValueIsRequired"/> error
+    /// (code and message) instead of the default FluentValidation message.
     /// </summary>
     public static IRuleBuilderOptions<T, string> NotEmptyWithKotoError<T>(
         this IRuleBuilder<T, string> ruleBuilder)
     {
+        var error = Errors.General.ValueIsRequired();
         return ruleBuilder
             .NotEmpty()
-            .WithMessage(Errors.General.ValueIsRequired().Serialize());
+            .WithErrorCode(error.Code)
+            .WithMessage(error.Message)
+            .WithState(_ => error);
     }
 
     /// <summary>
-    /// Overrides the default length message with <see cref="Errors.General.InvalidLength"/>.
+    /// Applies <c>Length</c> with the Koto <see cref="Errors.General.InvalidLength"/> error
+    /// (code and message) instead of the default FluentValidation message.
     /// </summary>
     public static IRuleBuilderOptions<T, string> LengthWithKotoError<T>(
         this IRuleBuilder<T, string> ruleBuilder, int min, int max)
     {
+        var error = Errors.General.InvalidLength(min, max);
         return ruleBuilder
             .Length(min, max)
-            .WithMessage(Errors.General.InvalidLength(min, max).Serialize());
+            .WithErrorCode(error.Code)
+            .WithMessage(error.Message)
+            .WithState(_ => error);
     }
+
+    private static ValidationFailure CreateFailure(string propertyPath, Error error) =>
+        new(propertyPath, error.Message)
+        {
+            ErrorCode = error.Code,
+            CustomState = error,
+        };
 }

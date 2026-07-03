@@ -6,11 +6,14 @@ namespace Koto.Domain.Tests;
 public class ErrorTests
 {
     [Fact]
-    public void Serialize_produces_code_double_colon_message()
+    public void Field_is_optional_and_preserved_by_with_expression()
     {
         var error = new Error("general.not-found", "Item was not found.");
+        error.Field.Should().BeNull();
 
-        error.Serialize().Should().Be("general.not-found::Item was not found.");
+        var withField = error with { Field = "OrderId" };
+        withField.Field.Should().Be("OrderId");
+        withField.Code.Should().Be("general.not-found");
     }
 
     [Fact]

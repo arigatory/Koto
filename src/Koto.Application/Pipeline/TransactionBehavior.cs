@@ -24,22 +24,22 @@ public sealed class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior
     public async Task<TResponse> HandleAsync(TRequest request, Func<Task<TResponse>> next, CancellationToken ct)
     {
         if (!IsCommand)
-            return await next();
+            return await next().ConfigureAwait(false);
 
-        await _uow.BeginTransactionAsync(ct);
+        await _uow.BeginTransactionAsync(ct).ConfigureAwait(false);
         try
         {
-            var response = await next();
+            var response = await next().ConfigureAwait(false);
             if (response is IResultBase { IsFailure: true })
                 // A domain failure (Result.Failure) discards any tracked mutations instead of committing.
-                await _uow.RollbackAsync(ct);
+                await _uow.RollbackAsync(ct).ConfigureAwait(false);
             else
-                await _uow.CommitAsync(ct);
+                await _uow.CommitAsync(ct).ConfigureAwait(false);
             return response;
         }
         catch
         {
-            await _uow.RollbackAsync(ct);
+            await _uow.RollbackAsync(ct).ConfigureAwait(false);
             throw;
         }
     }

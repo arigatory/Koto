@@ -56,6 +56,6 @@ public class AggregateRootTests
 
         var evt = order.DomainEvents[0];
         evt.EventId.Should().NotBe(Guid.Empty);
-        evt.OccurredAt.Kind.Should().Be(DateTimeKind.Utc);
+        evt.OccurredAt.Offset.Should().Be(TimeSpan.Zero);
     }
 }

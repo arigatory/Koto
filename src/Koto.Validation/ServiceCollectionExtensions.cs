@@ -21,7 +21,8 @@ public static class ServiceCollectionExtensions
 
         foreach (var assembly in assemblies)
         {
-            foreach (var type in assembly.GetTypes().Where(t => !t.IsAbstract && !t.IsInterface))
+            foreach (var type in AssemblyScanning.GetLoadableTypes(assembly)
+                         .Where(t => !t.IsAbstract && !t.IsInterface))
             {
                 foreach (var iface in type.GetInterfaces().Where(IsValidatorInterface))
                     services.AddTransient(iface, type);

@@ -17,7 +17,7 @@ public abstract class AggregateRoot<TId> : Entity<TId>, IHasDomainEvents
     /// intent and guards against non-standard mappers attempting to persist it.
     /// </remarks>
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
-    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents;
 
     /// <summary>Initializes a new aggregate root with the given <paramref name="id"/>.</summary>
     protected AggregateRoot(TId id) : base(id) { }

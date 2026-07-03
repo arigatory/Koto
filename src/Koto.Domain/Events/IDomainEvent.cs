@@ -6,9 +6,9 @@ namespace Koto.Domain;
 /// </summary>
 public interface IDomainEvent
 {
-    /// <summary>Unique identifier for this event instance.</summary>
+    /// <summary>Unique identifier for this event instance. Survives serialization round-trips.</summary>
     Guid EventId { get; }
 
-    /// <summary>UTC timestamp when the event occurred.</summary>
-    DateTime OccurredAt { get; }
+    /// <summary>Timestamp when the event occurred (UTC by default). Survives serialization round-trips.</summary>
+    DateTimeOffset OccurredAt { get; }
 }

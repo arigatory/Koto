@@ -15,4 +15,7 @@ public interface IResultBase
 
     /// <summary><c>true</c> when the operation failed.</summary>
     bool IsFailure { get; }
+
+    /// <summary>All errors carried by a failed result; empty on success.</summary>
+    IReadOnlyList<Error> Errors { get; }
 }

@@ -8,6 +8,10 @@ namespace Koto.Domain;
 /// <param name="Message">Human-readable description of the error.</param>
 public sealed record Error(string Code, string Message)
 {
-    /// <summary>Returns a serialized representation: <c>"code::message"</c>.</summary>
-    public string Serialize() => $"{Code}::{Message}";
+    /// <summary>
+    /// Name of the field/property the error relates to, when applicable.
+    /// Typically set by the application layer (e.g. the validation pipeline) so that
+    /// HTTP responses can group errors per field; domain factories usually leave it <c>null</c>.
+    /// </summary>
+    public string? Field { get; init; }
 }

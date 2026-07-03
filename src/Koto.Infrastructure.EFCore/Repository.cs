@@ -1,3 +1,4 @@
+using Koto.Application;
 using Koto.Domain;
 using Microsoft.EntityFrameworkCore;
 

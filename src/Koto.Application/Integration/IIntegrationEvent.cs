@@ -7,11 +7,14 @@ namespace Koto.Application;
 /// </summary>
 public interface IIntegrationEvent
 {
-    /// <summary>Unique identifier for this event instance.</summary>
+    /// <summary>
+    /// Unique identifier for this event instance. Must survive serialization round-trips —
+    /// consumers rely on it for idempotency/deduplication.
+    /// </summary>
     Guid EventId { get; }
 
-    /// <summary>UTC timestamp when the event occurred.</summary>
-    DateTime OccurredAt { get; }
+    /// <summary>Timestamp when the event occurred (UTC by default). Survives serialization round-trips.</summary>
+    DateTimeOffset OccurredAt { get; }
 
     /// <summary>Optional correlation ID for distributed tracing.</summary>
     string? CorrelationId { get; }

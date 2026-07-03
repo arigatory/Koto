@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Koto.Application;
 using Koto.Domain;
 
 namespace Koto.Testing.Fakes;

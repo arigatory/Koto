@@ -1,9 +1,12 @@
-namespace Koto.Domain;
+using Koto.Domain;
+
+namespace Koto.Application;
 
 /// <summary>
-/// Persistence contract for aggregate roots. Implementations live in the infrastructure
-/// layer; this interface belongs to the domain layer to keep aggregates independent of
-/// any specific ORM or database.
+/// Persistence contract for aggregate roots. Lives in the application layer — its only
+/// consumers are command/query handlers; aggregates themselves never touch repositories.
+/// Implementations live in the infrastructure layer, keeping the domain free of any
+/// persistence concern.
 /// </summary>
 /// <typeparam name="TAgg">The aggregate root type.</typeparam>
 /// <typeparam name="TId">The aggregate identifier type.</typeparam>

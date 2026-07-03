@@ -13,8 +13,8 @@ public sealed record OrderId(Guid Value) : StronglyTypedId<Guid>(Value)
     public static OrderId New() => new(Guid.NewGuid());
 }
 
-public sealed record OrderPlaced(Guid EventId, DateTime OccurredAt, decimal Total) : IDomainEvent;
-public sealed record OrderShipped(Guid EventId, DateTime OccurredAt) : IDomainEvent;
+public sealed record OrderPlaced(Guid EventId, DateTimeOffset OccurredAt, decimal Total) : IDomainEvent;
+public sealed record OrderShipped(Guid EventId, DateTimeOffset OccurredAt) : IDomainEvent;
 
 public sealed class Order : EventSourcedAggregateRoot<OrderId>
 {
@@ -24,7 +24,7 @@ public sealed class Order : EventSourcedAggregateRoot<OrderId>
     public static Order Place(decimal total)
     {
         var order = new Order();
-        order.RaiseEvent(new OrderPlaced(Guid.NewGuid(), DateTime.UtcNow, total));
+        order.RaiseEvent(new OrderPlaced(Guid.NewGuid(), DateTimeOffset.UtcNow, total));
         return order;
     }
 

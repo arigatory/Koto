@@ -23,11 +23,13 @@ public class PipelineBehaviorTests
         public List<string> Order { get; } = [];
     }
 
+    // Behaviors are resolved against the CONCRETE command type (not the ICommand<T> marker),
+    // so test behaviors implement IPipelineBehavior<TheCmd, Result<int>>.
     private sealed class FirstBehavior(OrderTracker tracker)
-        : IPipelineBehavior<ICommand<int>, Result<int>>
+        : IPipelineBehavior<TheCmd, Result<int>>
     {
         public async Task<Result<int>> HandleAsync(
-            ICommand<int> request, Func<Task<Result<int>>> next, CancellationToken ct)
+            TheCmd request, Func<Task<Result<int>>> next, CancellationToken ct)
         {
             tracker.Order.Add("first:before");
             var result = await next();
@@ -37,15 +39,26 @@ public class PipelineBehaviorTests
     }
 
     private sealed class SecondBehavior(OrderTracker tracker)
-        : IPipelineBehavior<ICommand<int>, Result<int>>
+        : IPipelineBehavior<TheCmd, Result<int>>
     {
         public async Task<Result<int>> HandleAsync(
-            ICommand<int> request, Func<Task<Result<int>>> next, CancellationToken ct)
+            TheCmd request, Func<Task<Result<int>>> next, CancellationToken ct)
         {
             tracker.Order.Add("second:before");
             var result = await next();
             tracker.Order.Add("second:after");
             return result;
+        }
+    }
+
+    // Captures the closed TRequest type an open-generic behavior sees at dispatch time.
+    private sealed class TypeCapturingBehavior<TRequest, TResponse>(OrderTracker tracker)
+        : IPipelineBehavior<TRequest, TResponse>
+    {
+        public Task<TResponse> HandleAsync(TRequest request, Func<Task<TResponse>> next, CancellationToken ct)
+        {
+            tracker.Order.Add($"request-type:{typeof(TRequest).Name}");
+            return next();
         }
     }
 
@@ -97,13 +110,29 @@ public class PipelineBehaviorTests
         var dispatcher = Build(s =>
         {
             s.AddTransient<ICommandHandler<TheCmd, int>, TheCmdHandler>();
-            s.AddSingleton<IPipelineBehavior<ICommand<int>, Result<int>>>(new FirstBehavior(tracker));
-            s.AddSingleton<IPipelineBehavior<ICommand<int>, Result<int>>>(new SecondBehavior(tracker));
+            s.AddSingleton<IPipelineBehavior<TheCmd, Result<int>>>(new FirstBehavior(tracker));
+            s.AddSingleton<IPipelineBehavior<TheCmd, Result<int>>>(new SecondBehavior(tracker));
         });
 
         await dispatcher.SendAsync<int>(new TheCmd(3));
 
         tracker.Order.Should().ContainInOrder("first:before", "second:before", "second:after", "first:after");
+    }
+
+    [Fact]
+    public async Task Open_generic_behavior_closes_over_concrete_command_type()
+    {
+        var tracker = new OrderTracker();
+        var dispatcher = Build(s =>
+        {
+            s.AddTransient<ICommandHandler<TheCmd, int>, TheCmdHandler>();
+            s.AddSingleton(tracker);
+            s.AddTransient(typeof(IPipelineBehavior<,>), typeof(TypeCapturingBehavior<,>));
+        });
+
+        await dispatcher.SendAsync<int>(new TheCmd(3));
+
+        tracker.Order.Should().ContainSingle().Which.Should().Be($"request-type:{nameof(TheCmd)}");
     }
 
     [Fact]

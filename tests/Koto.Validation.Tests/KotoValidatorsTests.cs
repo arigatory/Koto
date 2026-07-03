@@ -7,7 +7,7 @@ namespace Koto.Validation.Tests;
 
 public class KotoValidatorsTests
 {
-    // ── Value Object fake ──────────────────────────────────────────────────────
+    // ── Value Object fakes ─────────────────────────────────────────────────────
 
     private sealed class Email : ValueObject
     {
@@ -22,12 +22,33 @@ public class KotoValidatorsTests
         protected override IEnumerable<object?> GetEqualityComponents() { yield return Value; }
     }
 
+    // Non-string source: value object created from an int.
+    private sealed class Quantity : ValueObject
+    {
+        public int Value { get; }
+        private Quantity(int v) => Value = v;
+
+        public static Result<Quantity> Create(int v) =>
+            v <= 0 ? new Error("general.quantity.must-be-positive", "Quantity must be positive.")
+                   : new Quantity(v);
+
+        protected override IEnumerable<object?> GetEqualityComponents() { yield return Value; }
+    }
+
     private sealed class Request { public string Email { get; init; } = ""; }
 
     private sealed class RequestValidator : AbstractValidator<Request>
     {
         public RequestValidator() =>
             RuleFor(x => x.Email).MustBeValueObject(Email.Create);
+    }
+
+    private sealed class OrderLine { public int Quantity { get; init; } }
+
+    private sealed class OrderLineValidator : AbstractValidator<OrderLine>
+    {
+        public OrderLineValidator() =>
+            RuleFor(x => x.Quantity).MustBeValueObject(Quantity.Create);
     }
 
     // ── MustBeValueObject ──────────────────────────────────────────────────────
@@ -40,12 +61,28 @@ public class KotoValidatorsTests
     }
 
     [Fact]
-    public void MustBeValueObject_fails_and_message_is_Error_Serialize()
+    public void MustBeValueObject_carries_structured_error_on_failure()
     {
+        var expected = Errors.General.ValueIsRequired();
+
         var result = new RequestValidator().Validate(new Request { Email = "" });
 
         result.IsValid.Should().BeFalse();
-        result.Errors[0].ErrorMessage.Should().Be(Errors.General.ValueIsRequired().Serialize());
+        var failure = result.Errors[0];
+        failure.ErrorMessage.Should().Be(expected.Message);
+        failure.ErrorCode.Should().Be(expected.Code);
+        failure.CustomState.Should().BeOfType<Error>().Which.Code.Should().Be(expected.Code);
+        failure.PropertyName.Should().Be("Email");
+    }
+
+    [Fact]
+    public void MustBeValueObject_works_for_non_string_source()
+    {
+        var result = new OrderLineValidator().Validate(new OrderLine { Quantity = -1 });
+
+        result.IsValid.Should().BeFalse();
+        result.Errors[0].ErrorCode.Should().Be("general.quantity.must-be-positive");
+        result.Errors[0].CustomState.Should().BeOfType<Error>();
     }
 
     // ── ListMustContainNumberOfItems ───────────────────────────────────────────
@@ -68,19 +105,25 @@ public class KotoValidatorsTests
     [Fact]
     public void ListMustContainNumberOfItems_fails_when_too_small()
     {
+        var expected = Errors.General.CollectionIsTooSmall(1, 0);
+
         var result = new ListValidator().Validate(new ListRequest { Tags = [] });
 
         result.IsValid.Should().BeFalse();
-        result.Errors[0].ErrorMessage.Should().Be(Errors.General.CollectionIsTooSmall(1, 0).Serialize());
+        result.Errors[0].ErrorMessage.Should().Be(expected.Message);
+        result.Errors[0].ErrorCode.Should().Be(expected.Code);
     }
 
     [Fact]
     public void ListMustContainNumberOfItems_fails_when_too_large()
     {
+        var expected = Errors.General.CollectionIsTooLarge(3, 4);
+
         var result = new ListValidator().Validate(new ListRequest { Tags = ["a", "b", "c", "d"] });
 
         result.IsValid.Should().BeFalse();
-        result.Errors[0].ErrorMessage.Should().Be(Errors.General.CollectionIsTooLarge(3, 4).Serialize());
+        result.Errors[0].ErrorMessage.Should().Be(expected.Message);
+        result.Errors[0].ErrorCode.Should().Be(expected.Code);
     }
 
     // ── NotEmptyWithKotoError / LengthWithKotoError ────────────────────────────
@@ -95,20 +138,24 @@ public class KotoValidatorsTests
     }
 
     [Fact]
-    public void NotEmptyWithKotoError_uses_general_error_message()
+    public void NotEmptyWithKotoError_uses_general_error()
     {
+        var expected = Errors.General.ValueIsRequired();
+
         var result = new NameValidator().Validate(new Request { Email = "" });
 
         result.Errors.Should().Contain(e =>
-            e.ErrorMessage == Errors.General.ValueIsRequired().Serialize());
+            e.ErrorMessage == expected.Message && e.ErrorCode == expected.Code);
     }
 
     [Fact]
-    public void LengthWithKotoError_uses_general_error_message()
+    public void LengthWithKotoError_uses_general_error()
     {
+        var expected = Errors.General.InvalidLength(2, 10);
+
         var result = new NameValidator().Validate(new Request { Email = "x" });
 
         result.Errors.Should().Contain(e =>
-            e.ErrorMessage == Errors.General.InvalidLength(2, 10).Serialize());
+            e.ErrorMessage == expected.Message && e.ErrorCode == expected.Code);
     }
 }
