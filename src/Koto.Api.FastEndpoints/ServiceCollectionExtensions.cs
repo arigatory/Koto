@@ -1,3 +1,4 @@
+using Koto.Api.AspNetCore;
 using Koto.Api.FastEndpoints.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,14 +9,21 @@ namespace Koto.Api.FastEndpoints;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers Koto API services: correlation ID middleware, accessor, and global exception handler.
+    /// Registers Koto API services: the Error → HTTP status registry
+    /// (<see cref="KotoHttpErrorOptions"/>), correlation ID middleware, accessor,
+    /// and global exception handler.
     /// </summary>
     /// <remarks>
     /// Also call <c>app.UseKotoApi()</c> to add the middleware to the pipeline, and
     /// <c>app.UseFastEndpoints()</c> to register FastEndpoints routes.
     /// </remarks>
-    public static IServiceCollection AddKotoApi(this IServiceCollection services)
+    /// <param name="services">The service collection.</param>
+    /// <param name="configureErrors">Optional Error → HTTP status customization, e.g. <c>o =&gt; o.Map("payments.gateway-failed", 502)</c>.</param>
+    public static IServiceCollection AddKotoApi(
+        this IServiceCollection services,
+        Action<KotoHttpErrorOptions>? configureErrors = null)
     {
+        services.AddKotoAspNetCore(configureErrors);
         services.AddSingleton<CorrelationIdMiddleware>();
         services.AddSingleton<ICorrelationIdAccessor, CorrelationIdAccessor>();
         services.AddExceptionHandler<GlobalExceptionHandler>();

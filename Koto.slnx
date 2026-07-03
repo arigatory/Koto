@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Koto.Api.AspNetCore/Koto.Api.AspNetCore.csproj" />
     <Project Path="src/Koto.Api.FastEndpoints/Koto.Api.FastEndpoints.csproj" />
     <Project Path="src/Koto.Application/Koto.Application.csproj" />
     <Project Path="src/Koto.Domain/Koto.Domain.csproj" />
@@ -13,6 +14,7 @@
     <Project Path="src/Koto.Validation/Koto.Validation.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Koto.Api.AspNetCore.Tests/Koto.Api.AspNetCore.Tests.csproj" />
     <Project Path="tests/Koto.Api.FastEndpoints.Tests/Koto.Api.FastEndpoints.Tests.csproj" />
     <Project Path="tests/Koto.Application.Tests/Koto.Application.Tests.csproj" />
     <Project Path="tests/Koto.Domain.Tests/Koto.Domain.Tests.csproj" />

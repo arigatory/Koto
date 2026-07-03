@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Koto.Api.AspNetCore\Koto.Api.AspNetCore.csproj" />
     <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
   </ItemGroup>
 

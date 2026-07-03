@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Koto.Api.AspNetCore</PackageId>
+    <Description>Transport-agnostic ASP.NET Core integration for Koto: Result-to-IResult/ActionResult mapping, RFC 7807 Problem Details from Error (multi-error aware), and an extensible error-code-to-HTTP-status registry. Works with Minimal APIs, MVC controllers, and FastEndpoints.</Description>
+    <PackageTags>ddd;aspnetcore;minimal-api;mvc;result;problem-details;cqrs;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

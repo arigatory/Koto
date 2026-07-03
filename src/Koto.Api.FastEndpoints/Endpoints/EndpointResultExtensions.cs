@@ -1,6 +1,6 @@
 using FastEndpoints;
+using Koto.Api.AspNetCore;
 using Koto.Api.FastEndpoints.Middleware;
-using Koto.Api.FastEndpoints.ProblemDetails;
 using Koto.Domain;
 using Microsoft.AspNetCore.Http;
 
@@ -8,7 +8,8 @@ namespace Koto.Api.FastEndpoints.Endpoints;
 
 /// <summary>
 /// Shared mapping from a dispatched <see cref="Result{T}"/> to an HTTP response:
-/// success sends 200/204, failure sends RFC 7807 Problem Details via <see cref="KotoProblemDetails"/>.
+/// success sends 200/204, failure sends RFC 7807 Problem Details via
+/// <see cref="KotoProblemDetails"/> (all errors preserved; status from <see cref="KotoHttpErrorOptions"/>).
 /// </summary>
 internal static class EndpointResultExtensions
 {
@@ -18,8 +19,7 @@ internal static class EndpointResultExtensions
     {
         var result = await pending;
         if (result.IsFailure)
-            await endpoint.HttpContext.Response.SendResultAsync(
-                KotoProblemDetails.From(result.Error, CorrelationContext.Current.Value));
+            await endpoint.HttpContext.Response.SendResultAsync(ToProblem(endpoint, result.Errors));
         else
             await endpoint.HttpContext.Response.SendNoContentAsync(ct);
     }
@@ -30,9 +30,14 @@ internal static class EndpointResultExtensions
     {
         var result = await pending;
         if (result.IsFailure)
-            await endpoint.HttpContext.Response.SendResultAsync(
-                KotoProblemDetails.From(result.Error, CorrelationContext.Current.Value));
+            await endpoint.HttpContext.Response.SendResultAsync(ToProblem(endpoint, result.Errors));
         else
             await endpoint.HttpContext.Response.SendOkAsync(result.Value, cancellation: ct);
     }
+
+    private static IResult ToProblem(IEndpoint endpoint, IReadOnlyList<Error> errors) =>
+        KotoProblemDetails.From(
+            errors,
+            endpoint.HttpContext.GetKotoHttpErrorOptions(),
+            CorrelationContext.Current.Value);
 }

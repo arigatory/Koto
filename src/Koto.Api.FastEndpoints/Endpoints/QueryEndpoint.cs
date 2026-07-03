@@ -5,7 +5,7 @@ namespace Koto.Api.FastEndpoints.Endpoints;
 /// <summary>
 /// Base endpoint for queries (returns 200 OK with <typeparamref name="TResult"/> on success).
 /// Errors with <c>*.not-found</c> code return 404; all other failures return 400 or 500 per
-/// <see cref="ProblemDetails.KotoProblemDetails.StatusCodeFrom"/>.
+/// <see cref="Koto.Api.AspNetCore.KotoHttpErrorOptions"/>.
 /// Subclass, implement <c>HandleAsync</c> and call <see cref="SendQueryAsync"/>.
 /// Use <see cref="MappedQueryEndpoint{TRequest,TQuery,TResult}"/> instead when the query carries
 /// server-derived parameters that must not be bound from the request.
