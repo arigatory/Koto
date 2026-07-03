@@ -21,6 +21,6 @@ public sealed class CorrelationIdMiddleware : IMiddleware
         CorrelationContext.Current.Value = correlationId;
         context.Response.Headers[HeaderName] = correlationId;
 
-        await next(context);
+        await next(context).ConfigureAwait(false);
     }
 }

@@ -25,7 +25,7 @@ public abstract class KotoDbContext : DbContext
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var result = await base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         // Wolverine has already scraped domain events into the outbox before this call.
         // Clear them to avoid re-publishing on subsequent saves.

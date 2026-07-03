@@ -33,7 +33,7 @@ public abstract class IntegrationEventConsumerBase<TEvent>
     {
         var correlationId = CorrelationContext.CorrelationId.Value;
 
-        if (await _store.IsProcessedAsync(@event.EventId, ct))
+        if (await _store.IsProcessedAsync(@event.EventId, ct).ConfigureAwait(false))
         {
             _logger.LogInformation(
                 "Duplicate event {EventId} of type {EventType} (CorrelationId: {CorrelationId}), skipping",
@@ -47,8 +47,8 @@ public abstract class IntegrationEventConsumerBase<TEvent>
                 "Handling event {EventId} of type {EventType} (CorrelationId: {CorrelationId})",
                 @event.EventId, typeof(TEvent).Name, correlationId);
 
-            await ConsumeAsync(@event, ct);
-            await _store.MarkAsProcessedAsync(@event.EventId, ct);
+            await ConsumeAsync(@event, ct).ConfigureAwait(false);
+            await _store.MarkAsProcessedAsync(@event.EventId, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

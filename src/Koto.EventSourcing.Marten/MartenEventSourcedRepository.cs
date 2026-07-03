@@ -23,7 +23,7 @@ public class MartenEventSourcedRepository<TAgg, TId> : IEventSourcedRepository<T
     /// <inheritdoc/>
     public async Task<TAgg?> GetByIdAsync(TId id, CancellationToken ct = default)
     {
-        var events = await _session.Events.FetchStreamAsync(id.Value, token: ct);
+        var events = await _session.Events.FetchStreamAsync(id.Value, token: ct).ConfigureAwait(false);
         if (events.Count == 0) return null;
 
         var domainEvents = events.Select(e => (IDomainEvent)e.Data);
@@ -37,7 +37,7 @@ public class MartenEventSourcedRepository<TAgg, TId> : IEventSourcedRepository<T
         if (events.Count == 0) return;
 
         _session.Events.Append(aggregate.Id.Value, events.Cast<object>().ToArray());
-        await _session.SaveChangesAsync(ct);
+        await _session.SaveChangesAsync(ct).ConfigureAwait(false);
         aggregate.ClearUncommittedEvents();
     }
 }

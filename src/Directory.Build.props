@@ -3,7 +3,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <Version>0.2.0-preview.1</Version>
+    <Version>0.3.0-preview.1</Version>
     <Authors>Ivan Panchenko</Authors>
     <Company>Ivan Panchenko</Company>
     <Copyright>Copyright © 2026 Ivan Panchenko</Copyright>
@@ -15,6 +15,11 @@
 
     <!-- XML docs for IntelliSense -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Libraries must not capture the sync context: CA2007 (missing ConfigureAwait) is an error.
+         The rule itself is enabled in src/.editorconfig. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <WarningsAsErrors>$(WarningsAsErrors);CA2007</WarningsAsErrors>
 
     <!-- Symbol package for debugging -->
     <IncludeSymbols>true</IncludeSymbols>

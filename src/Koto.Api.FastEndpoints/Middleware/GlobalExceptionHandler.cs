@@ -34,7 +34,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 ["correlationId"] = correlationId
             });
 
-        await result.ExecuteAsync(httpContext);
+        await result.ExecuteAsync(httpContext).ConfigureAwait(false);
         return true;
     }
 }

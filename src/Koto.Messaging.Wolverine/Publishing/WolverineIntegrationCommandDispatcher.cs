@@ -23,7 +23,7 @@ public sealed class WolverineIntegrationCommandDispatcher : IIntegrationCommandD
 
     /// <inheritdoc/>
     public async Task SendAsync(IIntegrationCommand command, CancellationToken ct = default)
-        => await _bus.SendAsync(command);
+        => await _bus.SendAsync(command).ConfigureAwait(false);
 
     /// <inheritdoc/>
     public Task<TResult> SendAsync<TResult>(IIntegrationCommand<TResult> command, CancellationToken ct = default)

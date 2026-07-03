@@ -30,11 +30,11 @@ public abstract class ServiceHttpClient
     {
         if (response.IsSuccessStatusCode)
         {
-            var value = await response.Content.ReadFromJsonAsync<T>(ct);
+            var value = await response.Content.ReadFromJsonAsync<T>(ct).ConfigureAwait(false);
             return value!;
         }
 
-        var body = await response.Content.ReadAsStringAsync(ct);
+        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         return MapErrorResponse(response, body);
     }
 

@@ -29,7 +29,7 @@ public abstract class ScheduledJobBase : IJob, IScheduledJob
 
         try
         {
-            await ExecuteAsync(ct);
+            await ExecuteAsync(ct).ConfigureAwait(false);
             var elapsed = DateTime.UtcNow - started;
             _logger.LogInformation("Job {JobId} completed in {ElapsedMs}ms", JobId, elapsed.TotalMilliseconds);
         }

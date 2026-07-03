@@ -22,7 +22,7 @@ public sealed class IdempotencyMiddleware
         if (envelope.Id == Guid.Empty)
             return HandlerContinuation.Continue;
 
-        return await _store.IsProcessedAsync(envelope.Id, ct)
+        return await _store.IsProcessedAsync(envelope.Id, ct).ConfigureAwait(false)
             ? HandlerContinuation.Stop
             : HandlerContinuation.Continue;
     }

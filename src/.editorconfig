@@ -1,0 +1,6 @@
+# Analyzer rules for Koto library sources (does not apply to tests/).
+# CA2007: library code must not capture the synchronization context —
+# every await needs ConfigureAwait(false). Promoted to error via
+# WarningsAsErrors in src/Directory.Build.props.
+[*.cs]
+dotnet_diagnostic.CA2007.severity = warning

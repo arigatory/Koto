@@ -32,7 +32,7 @@ public abstract class IntegrationCommandConsumerBase<TCommand>
                 "Handling command {CommandType} (CorrelationId: {CorrelationId})",
                 typeof(TCommand).Name, correlationId);
 
-            await ExecuteAsync(command, ct);
+            await ExecuteAsync(command, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

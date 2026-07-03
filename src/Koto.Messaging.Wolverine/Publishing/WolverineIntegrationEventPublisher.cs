@@ -16,5 +16,5 @@ public sealed class WolverineIntegrationEventPublisher : IIntegrationEventPublis
 
     /// <inheritdoc/>
     public async Task PublishAsync(IIntegrationEvent integrationEvent, CancellationToken ct = default)
-        => await _bus.PublishAsync(integrationEvent);
+        => await _bus.PublishAsync(integrationEvent).ConfigureAwait(false);
 }

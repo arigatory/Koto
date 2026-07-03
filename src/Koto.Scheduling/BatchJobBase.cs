@@ -30,7 +30,7 @@ public abstract class BatchJobBase<TItem> : IScheduledJob
 
         while (true)
         {
-            var batch = await FetchBatchAsync(offset, BatchSize, ct);
+            var batch = await FetchBatchAsync(offset, BatchSize, ct).ConfigureAwait(false);
             if (batch.Count == 0) break;
 
             _logger.LogDebug("Job {JobId} processing batch offset={Offset} count={Count}",
@@ -40,7 +40,7 @@ public abstract class BatchJobBase<TItem> : IScheduledJob
             {
                 try
                 {
-                    await ProcessItemAsync(item, ct);
+                    await ProcessItemAsync(item, ct).ConfigureAwait(false);
                     totalProcessed++;
                 }
                 catch (Exception ex)
