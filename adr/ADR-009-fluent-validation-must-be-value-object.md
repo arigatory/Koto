@@ -212,3 +212,19 @@ public static IRuleBuilderOptions<T, string> Length<T>(
 
 5. **Рост числа перегрузок в Koto.Validation без контроля**  
    *Меры:* Новые методы расширения в `Koto.Validation` добавляются только при наличии не менее трёх реальных use-case в кодовой базе. Каждое добавление фиксируется в CHANGELOG пакета. Размытие ответственности пакета требует нового ADR.
+
+---
+
+## Ревизия 2026-07-04 (v0.3.0-preview.1)
+
+**FluentValidation обновлена с `[7.*, 8.0)` на `[12.0.0, 13.0.0)`.** Пиннинг v7 «ради стабильности API» перестал окупаться: он требовал cast-хаков, завязанных на internals v7, лишал потребителей современного FV и блокировал async-правила. Паттерн `MustBeValueObject` — единая точка истины в доменной фабрике — полностью сохранён и усилен.
+
+Что изменилось:
+
+- **Cast-хаки удалены.** В FV8+ `Custom()` возвращает `IRuleBuilderOptionsConditions<T, TProperty>` — честный возвращаемый тип вместо `(IRuleBuilderOptions<T, string>)(object)…`.
+- **`MustBeValueObject<T, TSource, TValueObject>` generic по типу источника.** Фабрики из `int`, `Guid`, `decimal` и т. д. теперь поддерживаются наравне со `string` (`RuleFor(x => x.Quantity).MustBeValueObject(Quantity.Create)`); вывод типов работает через method group. `MustBeEntity` делегирует `MustBeValueObject` (то же поведение, отдельное имя для читаемости).
+- **Структурные ошибки вместо `Serialize()`-строк.** Доменный `Error` едет в `ValidationFailure.CustomState` (+ `ErrorCode = Error.Code`), а не сериализованной строкой в `ErrorMessage`. `ValidationBehavior` разбирает `CustomState` и возвращает `Result` с настоящими `Error` по полям (`Error.Field = PropertyName`) — N ошибок валидации дают N структурных ошибок, ничего не склеивается в одну строку.
+- **`ValidationBehavior` использует `ValidateAsync`** — правила `MustAsync`/`CustomAsync` больше не бросают `AsyncValidatorInvokedSynchronouslyException`. `TResponse` ограничен `IResultFactory<TResponse>` — создание failure типобезопасно, без рефлексии.
+- Риск №2 из исходного ADR (случайное обновление до v8+) снят вместе с пиннингом; диапазон `[12.0.0,13.0.0)` защищает от случайного перехода на будущий мажор v13.
+
+Альтернатива «FluentValidation v8+» из §4, ранее отклонённая как «отложено», принята в виде актуальной v12.

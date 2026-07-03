@@ -10,7 +10,7 @@ DDD-specific test helpers for Koto microservices.
 | `AggregateAssertions<TAgg>` | Domain event assertions |
 | `FakeRepository<TAgg, TId>` | In-memory `IRepository<TAgg,TId>` |
 | `FakeIntegrationEventPublisher` | Captures published `IIntegrationEvent`s |
-| `ResultAssertions<T>` | `.Should().BeSuccess()`, `.BeFailure()`, `.BeFailureWith("code")`, `.HaveValue(x)` |
+| `ResultAssertions<T>` | `.Should().BeSuccess()`, `.BeFailure()`, `.BeFailureWith("code")`, `.HaveErrors("code1", "code2")`, `.HaveValue(x)` |
 
 ## Aggregate unit tests
 
@@ -37,6 +37,7 @@ var result = order.Cancel("reason");
 
 result.Should().BeSuccess();
 result.Should().BeFailureWith("orders.order.already-cancelled");
+result.Should().HaveErrors("general.value.is-required", "general.invalid-length"); // all codes, in order
 result.Should().HaveValue(expectedValue);
 ```
 

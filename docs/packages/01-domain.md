@@ -1,9 +1,15 @@
 # Koto.Domain — Plan
 
-**Phase:** 1 | **Status:** NOT STARTED
+**Phase:** 1 | **Status:** DONE
 **Depends on:** nothing (zero external dependencies)
 
 Принципы: `docs/principles/ddd.md`, `docs/principles/errors-and-results.md`
+
+> **Обновление v0.3.0-preview.1:** `Result<T>` стал multi-error (`Errors`, `Failure(IEnumerable<Error>)`,
+> статический `Result.Success()/Failure()/Combine`, `MatchAsync`, `IResultFactory<TSelf>`, null-guards);
+> `Error` получил `Field` и лишился `Serialize()`; события — `DateTimeOffset` + `init` (JSON round-trip);
+> `Entity.IsTransient`; `StronglyTypedId.CompareTo` проверяет тип; **`IRepository` переехал в
+> `Koto.Application`** (ревизия ADR-005). Чеклист ниже — исторический план; актуальное API см. README пакета.
 
 ---
 

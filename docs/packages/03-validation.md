@@ -1,7 +1,14 @@
 # Koto.Validation — Plan
 
-**Phase:** 1 | **Status:** NOT STARTED
-**Depends on:** Koto.Domain + FluentValidation v7 (pinned, Apache 2.0)
+**Phase:** 1 | **Status:** DONE
+**Depends on:** Koto.Domain + Koto.Application + FluentValidation v12 (`[12.0.0,13.0.0)`, Apache 2.0)
+
+> **Обновление v0.3.0-preview.1:** FluentValidation 7 → 12 (cast-хаки убраны);
+> `MustBeValueObject<T,TSource,TVO>` generic по типу источника (не только `string`);
+> доменный `Error` едет через `ValidationFailure.CustomState` + `ErrorCode` (не
+> `Serialize()`-строкой); `ValidationBehavior` — `ValidateAsync`, constraint
+> `IResultFactory<TResponse>` (без рефлексии), N ошибок → N структурных `Error` с `Field`.
+> См. ревизию ADR-009. Ниже — исторический план; актуальное API см. README пакета.
 
 ---
 

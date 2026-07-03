@@ -1,7 +1,13 @@
 # Koto.Api.FastEndpoints — Plan
 
 **Phase:** 3 | **Status:** DONE (mapped endpoints + claims helper — v0.2.0-preview.1)
-**Depends on:** Koto.Application + FastEndpoints (MIT)
+**Depends on:** Koto.Application + **Koto.Api.AspNetCore** + FastEndpoints (MIT)
+
+> **Обновление v0.3.0-preview.1:** `KotoProblemDetails` переехал в транспорт-независимый
+> пакет [Koto.Api.AspNetCore](14-api-aspnetcore.md) (ADR-020); захардкоженный
+> `StatusCodeFrom` заменён расширяемым `KotoHttpErrorOptions` (незамапленные коды → 422,
+> не 500); `AddKotoApi(configureErrors)`; эндпоинты отдают все ошибки `Result.Errors`
+> (multi-error → validation problem details).
 
 ---
 

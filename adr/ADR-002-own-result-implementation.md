@@ -114,3 +114,17 @@ var result = await Result<string>.Success(request.Email)
 | Команда использует `.Value` без проверки `IsSuccess` | Средняя | Высокое | Бросать `InvalidOperationException` при обращении к `.Value` в состоянии Failure; code review |
 | Асинхронные цепочки трудно отлаживать | Низкая | Среднее | Покрывать пути обработки ошибок юнит-тестами; использовать `TapError` для логирования |
 | Новый разработчик не знает паттерн Railway-Oriented | Средняя | Низкое | Добавить раздел в CLAUDE.md / onboarding-документацию с примерами |
+
+---
+
+## Ревизия 2026-07-04 (v0.3.0-preview.1)
+
+Модель «одиночной ошибки» пересмотрена: N ошибок валидации схлопывались в одну строку с потерей структуры. Изменения:
+
+- **Multi-error.** `Result<T>` хранит `Error[]`; новое свойство `Errors` (`IReadOnlyList<Error>`), `Error` возвращает первую ошибку (обратная совместимость с Khorikov-стилем). Добавлена фабрика `Failure(IEnumerable<Error>)`. `Map`/`Bind` и async-версии пропагируют **все** ошибки. Аргумент «ErrorOr хранит список — не наша модель» из §4 более не актуален: список ошибок оказался необходим для честной валидации.
+- **Статический компаньон `Result`.** `Result.Success()` / `Result.Failure(...)` для void-потоков (`Result<Unit>`) и `Result.Combine(...)` (кортежи арности 2–4 + `params IResultBase[]`) — агрегация результатов нескольких доменных фабрик со сбором всех ошибок.
+- **`IResultFactory<TSelf>`** со `static abstract FromErrors(IReadOnlyList<Error>)` — типобезопасная фабрика failure для generic-инфраструктуры (ValidationBehavior создаёт `TResponse` без рефлексии, ошибка несоответствия типа — compile-time).
+- **Null-guards.** `Success(null)` и `Failure(null / пустая коллекция)` бросают `ArgumentNullException`/`ArgumentException` — «успех с null» больше невозможен.
+- **`MatchAsync`** перегрузки (async success + async/sync failure) — убирают обёртки `Match<Task<...>>` с `Task.FromResult` у потребителей.
+- **`TapErrors(Action<IReadOnlyList<Error>>)`** — побочный эффект по всем ошибкам.
+- `IResultBase` расширен свойством `Errors` (нужно `Result.Combine` и HTTP-маппингу); маркеры `IsSuccess`/`IsFailure` не тронуты.

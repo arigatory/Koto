@@ -1,7 +1,15 @@
 # Koto.Application — Plan
 
-**Phase:** 1 | **Status:** NOT STARTED
+**Phase:** 1 | **Status:** DONE
 **Depends on:** Koto.Domain only
+
+> **Обновление v0.3.0-preview.1:** диспатчер резолвит behaviors по **конкретному** типу
+> команды/запроса (валидаторы `IValidator<КонкретнаяКоманда>` находятся пайплайном);
+> behaviors — opt-in через `KotoApplicationOptions` (`AddLoggingBehavior()`,
+> `AddTransactionBehavior()`, `AddBehavior(openGeneric)`; порядок регистрации = порядок
+> исполнения); сюда переехал `IRepository` (из Koto.Domain, ревизия ADR-005); добавлены
+> `IQueryBase` и `AssemblyScanning.GetLoadableTypes`; `IntegrationEvent` — `DateTimeOffset`
+> + `init`. Чеклист ниже — исторический план; актуальное API см. README пакета.
 
 ---
 

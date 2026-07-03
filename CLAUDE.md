@@ -12,9 +12,9 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Messaging: **Wolverine** + WolverineFx.Kafka
 - Event Sourcing: **Marten** (PostgreSQL)
 - ORM: **EF Core 10**
-- API: **FastEndpoints**
+- API: **FastEndpoints** + **Koto.Api.AspNetCore** (транспорт-независимый Result→HTTP: Minimal API, MVC)
 - Observability: Serilog + OpenTelemetry .NET
-- Validation: FluentValidation **v7** (pinned — для стабильности API; FluentValidation под Apache 2.0 на всех версиях)
+- Validation: FluentValidation **v12** (диапазон `[12.0.0,13.0.0)`, Apache 2.0)
 - Testing: xUnit + NSubstitute + AwesomeAssertions + Testcontainers.NET
 
 ## Принципы (подробнее в docs/principles/)
@@ -25,10 +25,20 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Value Object = `record` (простые) или `ValueObject` abstract base (кастомная equality).
 - Валидация живёт в фабричных методах: `Email.Create(string) → Result<Email>`.
 - Репозиторий: `Add`/`Delete` — синхронные (change tracker), `GetByIdAsync` — async. Коммит = зона UoW.
+- Интерфейс `IRepository` живёт в **Koto.Application** (не в Domain), рядом с `IUnitOfWork`:
+  порт принадлежит слою потребителя (хендлерам); домен — только сущности/VO/события/Result.
+- Pipeline behaviors — opt-in через `KotoApplicationOptions`:
+  `AddKotoApplication(o => o.AddLoggingBehavior().AddTransactionBehavior(), asm)`.
+  Порядок регистрации = порядок исполнения; рекомендуемый: Logging → Validation → Transaction.
+  Behaviors регистрируются как open generic и закрываются по **конкретному** типу команды/запроса.
 
 ### Result и Error
 - `Result<T>` — собственная реализация (вдохновлена Khorikovым), без внешних зависимостей.
-- `Error` = `record(string Code, string Message)`. Код: `"general.value.is-required"`, `"orders.order.not-found"`.
+- Multi-error: `Result<T>.Errors` несёт все ошибки (`Failure(IEnumerable<Error>)`), `Error` — первая.
+- Статический компаньон `Result`: `Success()` / `Failure(...)` для void-потоков (`Result<Unit>`)
+  и `Result.Combine(...)` — агрегация нескольких результатов (все ошибки, не первая).
+- `Error` = `record(string Code, string Message)` + опциональный `Field` (имя поля для
+  validation problem details; заполняет application-слой). Код: `"general.value.is-required"`, `"orders.order.not-found"`.
 - Нет `Maybe<T>` — используем C# nullable (`T?`, `??`, `?.`).
 - Нет `ErrorType` enum — смысл несёт код.
 
@@ -50,6 +60,6 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - FluentAssertions v8+ → коммерческий (Xceed) → заменён на **AwesomeAssertions**
 - EventStoreDB v24.10+ → ESLv2, использовать **Marten**
 
-> ⚠️ **FluentValidation — НЕ ловушка.** Apache 2.0 на всех версиях (включая v12). v7 пиннится
-> только ради стабильности API (см. ADR-009), не из-за лицензии. Не путать с **FluentAssertions**,
-> которая действительно ушла в коммерцию в v8.
+> ⚠️ **FluentValidation — НЕ ловушка.** Apache 2.0 на всех версиях (включая v12).
+> Используется v12 в диапазоне `[12.0.0,13.0.0)` (см. ревизию ADR-009). Не путать с
+> **FluentAssertions**, которая действительно ушла в коммерцию в v8.

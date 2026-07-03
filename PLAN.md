@@ -7,6 +7,38 @@
 
 ## История релизов
 
+- **v0.3.0-preview.1** — критический фикс пайплайна + multi-error Result + FluentValidation 12 +
+  новый пакет `Koto.Api.AspNetCore`. **Breaking changes / migration notes для потребителей (IceFlow, Task137):**
+  - **Behaviors резолвятся по конкретному типу команды/запроса** (`IPipelineBehavior<CreateUserCommand, Result<T>>`),
+    а не по маркеру. Валидаторы `AbstractValidator<КонкретнаяКоманда>` теперь находятся пайплайном
+    (раньше — молча игнорировались). Behaviors, реализованные против маркеров
+    (`IPipelineBehavior<ICommand<T>, …>`), больше не вызываются — перевести на open generic
+    регистрацию или конкретный тип.
+  - **Дефолтные behaviors — opt-in:** `AddKotoApplication(o => o.AddLoggingBehavior().AddTransactionBehavior(), asm)`.
+    Порядок регистрации = порядок исполнения (рекомендуется Logging → Validation → Transaction).
+  - **`Result<T>` multi-error:** `Errors` (все ошибки), `Failure(IEnumerable<Error>)`, null-guards
+    в `Success`/`Failure`; статический компаньон `Result.Success()`/`Result.Failure()`/`Result.Combine(...)`;
+    `MatchAsync`/`TapErrors`; `IResultBase.Errors`; `IResultFactory<TSelf>` (static abstract `FromErrors`).
+  - **`Error`:** добавлен `Field` (имя поля для validation problem details); **удалён `Serialize()`**
+    (транспортный хак FV7 — заменён `ValidationFailure.CustomState`).
+  - **События:** `IDomainEvent`/`IIntegrationEvent` — `OccurredAt` теперь `DateTimeOffset`,
+    `EventId`/`OccurredAt`/`CorrelationId` стали `init` → переживают JSON round-trip
+    (дедупликация у консюмеров работает).
+  - **`IRepository` переехал:** `Koto.Domain` → `Koto.Application` (поменять `using`; см. ревизию ADR-005).
+  - **FluentValidation 7.\* → `[12.0.0,13.0.0)`:** cast-хаки убраны; `MustBeValueObject<T,TSource,TVO>`
+    generic по типу источника (не только `string`); доменный `Error` едет через `CustomState` + `ErrorCode`;
+    `ValidationBehavior` использует `ValidateAsync` (async-правила работают) и возвращает
+    N структурных ошибок вместо склеенной строки.
+  - **`Koto.Api.FastEndpoints`:** `KotoProblemDetails` переехал в новый пакет (namespace
+    `Koto.Api.AspNetCore`); `StatusCodeFrom` заменён на расширяемый `KotoHttpErrorOptions`;
+    **незамапленные коды теперь 422 (было 500)**; `AddKotoApi(configureErrors)`; эндпоинты
+    отдают все ошибки `Result.Errors`.
+  - **Новый пакет `Koto.Api.AspNetCore`** (ADR-020): `ToHttpResult` (Minimal API) /
+    `ToActionResult` (MVC), RFC 7807 multi-error problem details, registry код → статус.
+  - **Прочее:** `ConfigureAwait(false)` во всех библиотеках + CA2007 = error (src);
+    `Entity.IsTransient` (transient-сущности не равны); `StronglyTypedId.CompareTo` бросает
+    при сравнении разных типов id; `IQueryBase`; guard от `ReflectionTypeLoadException`
+    при сканировании сборок; `Koto.Testing`: ассерт `HaveErrors(params string[])`.
 - **v0.2.0-preview.1** — `Koto.Api.FastEndpoints`: `MappedCommandEndpoint`/`MappedQueryEndpoint`
   (request DTO ≠ command, server-derived поля вне контракта) + `ClaimsPrincipal.GetUserId()`.
   `Koto.Application`: `TransactionBehavior` теперь делает rollback при `Result.Failure`
@@ -37,6 +69,7 @@
 |---|---|---|
 | `Koto.Messaging.Wolverine` | [docs/packages/07-wolverine.md](docs/packages/07-wolverine.md) | DONE |
 | `Koto.Api.FastEndpoints` | [docs/packages/08-fastendpoints.md](docs/packages/08-fastendpoints.md) | DONE |
+| `Koto.Api.AspNetCore` | [docs/packages/14-api-aspnetcore.md](docs/packages/14-api-aspnetcore.md) | DONE (v0.3.0-preview.1) |
 
 ### Phase 4 — Observability + Testing
 **Status: DONE** | Опубликовано: v0.1.0-preview.5
@@ -96,3 +129,5 @@
 - ℹ️ ADR для Wolverine/FastEndpoints/Scheduling уже существуют (006/008/014) — в исходном списке были перечислены ошибочно.
 
 **Опциональный остаток (не входил в этот проход):** мелкий дрейф API в ADR-014 (`KotoJob` → `ScheduledJobBase`/`BatchJobBase`, `UsePersistentStore` → `UseJobStore`) и ADR-008 (не упоминает `MappedCommandEndpoint`/`MappedQueryEndpoint` из v0.2). Освежить при следующем касании этих пакетов.
+
+**Обновление 2026-07-04 (v0.3.0-preview.1):** ADR-002/003/005/009 получили ревизии (multi-error Result + `IResultFactory`; `Error.Field` − `Serialize()`; перенос `IRepository` в Application; апгрейд FluentValidation до v12). Добавлен **ADR-020** (Koto.Api.AspNetCore — транспорт-независимый Result→HTTP маппинг, fallback 422).

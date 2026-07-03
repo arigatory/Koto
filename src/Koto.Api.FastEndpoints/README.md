@@ -1,6 +1,8 @@
 # Koto.Api.FastEndpoints
 
-FastEndpoints integration for Koto DDD building blocks.
+FastEndpoints integration for Koto DDD building blocks. Builds on
+**Koto.Api.AspNetCore** (transport-agnostic Result→HTTP mapping, `KotoProblemDetails`,
+`KotoHttpErrorOptions`).
 
 ## What's included
 
@@ -12,16 +14,21 @@ FastEndpoints integration for Koto DDD building blocks.
 | `MappedCommandEndpoint<TRequest, TCommand[, TResult]>` | Maps an HTTP request DTO to a command via `ToCommand` — keeps server-derived fields out of the wire contract |
 | `MappedQueryEndpoint<TRequest, TQuery, TResult>` | Maps an HTTP request DTO to a query via `ToQuery` |
 | `ClaimsPrincipalExtensions.GetUserId()` | Reads the user id from the `NameIdentifier` claim (`TryGetUserId` for the no-throw path) |
-| `KotoProblemDetails` | RFC 7807 factory from `Error` with `errorCode` + `correlationId` extensions |
 | `CorrelationIdMiddleware` | Reads/generates `X-Correlation-ID`, echoes in response |
 | `ICorrelationIdAccessor` | Access current correlation ID from anywhere in the request scope |
 | `GlobalExceptionHandler` | Catches unhandled exceptions → 500 Problem Details |
+
+Failed results are rendered by `KotoProblemDetails` from **Koto.Api.AspNetCore** —
+all `Result.Errors` are sent (multiple errors become RFC 7807 validation problem
+details grouped by `Error.Field`), with `errorCode`/`errorCodes` and `correlationId` extensions.
 
 ## Setup
 
 ```csharp
 // Program.cs
-builder.Services.AddKotoApi();
+builder.Services.AddKotoApi();          // includes AddKotoAspNetCore()
+// Or customize the Error.Code → HTTP status registry:
+builder.Services.AddKotoApi(o => o.Map("payments.gateway-failed", 502));
 builder.Services.AddFastEndpoints();
 // ... other services
 
@@ -100,9 +107,16 @@ fields). `HandleAsync` is sealed on the mapped variants — you only implement `
 
 ## Error code → HTTP status mapping
 
+Status codes come from `KotoHttpErrorOptions` (Koto.Api.AspNetCore) — an extensible
+registry (exact code → custom rules → suffix → prefix → fallback). Defaults:
+
 | Error code pattern | Status |
 |---|---|
 | `*.not-found` | 404 Not Found |
-| `*.already-*` | 409 Conflict |
-| `general.value.*` | 400 Bad Request |
-| anything else | 500 Internal Server Error |
+| `*.already-*`, `*.conflict` | 409 Conflict |
+| `*.unauthorized` | 401 Unauthorized |
+| `*.forbidden` | 403 Forbidden |
+| `general.*`, `validation.*`, `Error.Field != null` | 400 Bad Request |
+| anything else | **422 Unprocessable Entity** (configurable fallback; 500 is reserved for unhandled exceptions) |
+
+Customize via `AddKotoApi(o => o.Map("subscription.payment-failed", 502))`.

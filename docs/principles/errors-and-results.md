@@ -5,9 +5,15 @@
 ```csharp
 public sealed record Error(string Code, string Message)
 {
-    public string Serialize() => $"{Code}::{Message}";
+    // Имя поля/свойства, к которому относится ошибка. Заполняет application-слой
+    // (validation pipeline); доменные фабрики обычно оставляют null.
+    // Используется HTTP-слоем для validation problem details.
+    public string? Field { get; init; }
 }
 ```
+
+> `Serialize()` удалён в v0.3.0 — это был транспортный хак для FluentValidation v7.
+> Структурный `Error` теперь передаётся через `ValidationFailure.CustomState` (см. ревизию ADR-009).
 
 ### Формат кода ошибки
 
@@ -64,28 +70,45 @@ public static class Errors
 ## Result\<T\>
 
 Собственная реализация, без внешних зависимостей. Вдохновлена Khorikov.
+С v0.3.0 — multi-error: failure несёт одну или несколько ошибок.
 
 ```csharp
-public sealed class Result<T>
+public sealed class Result<T> : IResultBase, IResultFactory<Result<T>>
 {
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
-    public T Value { get; }        // throws if IsFailure
-    public Error Error { get; }    // throws if IsSuccess
+    public T Value { get; }                     // throws if IsFailure
+    public Error Error { get; }                 // первая ошибка; throws if IsSuccess
+    public IReadOnlyList<Error> Errors { get; } // все ошибки; пустой список на success
 
-    // Фабрика:
-    public static Result<T> Success(T value) => new(value);
-    public static Result<T> Failure(Error error) => new(error);
+    // Фабрики (null-guards: Success(null) и Failure(пустая коллекция) бросают):
+    public static Result<T> Success(T value);
+    public static Result<T> Failure(Error error);
+    public static Result<T> Failure(IEnumerable<Error> errors);
 
-    // Функциональная композиция:
+    // Функциональная композиция (Map/Bind пропагируют ВСЕ ошибки):
     public Result<TNew> Map<TNew>(Func<T, TNew> map);
     public Result<TNew> Bind<TNew>(Func<T, Result<TNew>> bind);
     public Result<T> Tap(Action<T> action);
-    public Result<T> TapError(Action<Error> action);
+    public Result<T> TapError(Action<Error> action);          // первая ошибка
+    public Result<T> TapErrors(Action<IReadOnlyList<Error>>); // все ошибки
     public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<Error, TResult> onFailure);
+    public Task<TResult> MatchAsync<TResult>(...);            // async success + async/sync failure
     public Result<T> Ensure(Func<T, bool> predicate, Error error);
 
     // Async overloads для всех методов выше
+}
+
+// Статический компаньон для void-потоков и агрегации:
+public static class Result
+{
+    public static Result<Unit> Success();
+    public static Result<Unit> Failure(Error error);
+    public static Result<Unit> Failure(IEnumerable<Error> errors);
+
+    // Combine собирает ВСЕ ошибки (не первую), на успехе — кортеж значений:
+    public static Result<(T1, T2)> Combine<T1, T2>(Result<T1> r1, Result<T2> r2); // arity 2–4
+    public static Result<Unit> Combine(params IResultBase[] results);
 }
 ```
 
@@ -127,6 +150,14 @@ return await Result<string>.Success(rawEmail)
     .TapAsync(user => _repo.AddAsync(user, ct));
 ```
 
+**Агрегация нескольких фабрик (все ошибки, не первая):**
+```csharp
+var combined = Result.Combine(Email.Create(dto.Email), Name.Create(dto.Name));
+if (combined.IsFailure)
+    return Result<User>.Failure(combined.Errors);
+var (email, name) = combined.Value;
+```
+
 **В FastEndpoints endpoint:**
 ```csharp
 var result = await _dispatcher.SendAsync(command, ct);
@@ -134,6 +165,18 @@ if (result.IsFailure)
     return await SendErrorAsync(result.Error, ct);
 return await SendOkAsync(result.Value, ct);
 ```
+
+**В MVC / Minimal API (Koto.Api.AspNetCore):**
+```csharp
+// MVC-контроллер:
+return (await _dispatcher.SendAsync(command, ct)).ToActionResult(this);
+
+// Minimal API:
+app.MapPost("/orders", (CreateOrderCommand cmd, ICqrsDispatcher d, HttpContext ctx, CancellationToken ct)
+    => d.SendAsync(cmd, ct).ToHttpResultAsync(ctx));
+```
+Маппинг `Error.Code` → HTTP-статус — через расширяемый `KotoHttpErrorOptions`
+(ADR-020): незамапленные бизнес-коды дают **422**, не 500.
 
 ## Нет Maybe\<T\>
 
