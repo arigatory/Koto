@@ -23,4 +23,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Koto.Api.AspNetCore\Koto.Api.AspNetCore.csproj" />
+  </ItemGroup>
+
 </Project>
