@@ -65,9 +65,18 @@ public class PipelineBehaviorTests
     private sealed class FakeUow : IUnitOfWork
     {
         public List<string> Calls { get; } = [];
-        public Task BeginTransactionAsync(CancellationToken ct = default) { Calls.Add("begin"); return Task.CompletedTask; }
-        public Task CommitAsync(CancellationToken ct = default) { Calls.Add("commit"); return Task.CompletedTask; }
-        public Task RollbackAsync(CancellationToken ct = default) { Calls.Add("rollback"); return Task.CompletedTask; }
+        public bool HasActiveTransaction { get; private set; }
+        public Task BeginTransactionAsync(CancellationToken ct = default) { Calls.Add("begin"); HasActiveTransaction = true; return Task.CompletedTask; }
+        public Task CommitAsync(CancellationToken ct = default) { Calls.Add("commit"); HasActiveTransaction = false; return Task.CompletedTask; }
+        public Task RollbackAsync(CancellationToken ct = default) { Calls.Add("rollback"); HasActiveTransaction = false; return Task.CompletedTask; }
+    }
+
+    /// <summary>Outer command whose handler dispatches an inner command through the pipeline.</summary>
+    private sealed record OuterCmd : ICommand<int>;
+    private sealed class OuterCmdHandler(ICqrsDispatcher dispatcher) : ICommandHandler<OuterCmd, int>
+    {
+        public async Task<Result<int>> HandleAsync(OuterCmd cmd, CancellationToken ct = default) =>
+            await dispatcher.SendAsync<int>(new TheCmd(21), ct);
     }
 
     private sealed record TheQuery(int Value) : IQuery<int>;
@@ -117,6 +126,26 @@ public class PipelineBehaviorTests
         await dispatcher.SendAsync<int>(new TheCmd(3));
 
         tracker.Order.Should().ContainInOrder("first:before", "second:before", "second:after", "first:after");
+    }
+
+    [Fact]
+    public async Task Nested_command_dispatch_joins_the_ambient_transaction()
+    {
+        var uow = new FakeUow();
+        var dispatcher = Build(s =>
+        {
+            s.AddTransient<ICommandHandler<OuterCmd, int>, OuterCmdHandler>();
+            s.AddTransient<ICommandHandler<TheCmd, int>, TheCmdHandler>();
+            s.AddSingleton<IUnitOfWork>(uow);
+            s.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+        });
+
+        var result = await dispatcher.SendAsync<int>(new OuterCmd());
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(42);
+        // Exactly one transaction — the inner command joined the outer one
+        uow.Calls.Should().Equal("begin", "commit");
     }
 
     [Fact]
