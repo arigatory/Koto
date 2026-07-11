@@ -2,9 +2,10 @@ namespace Koto.Domain;
 
 /// <summary>
 /// Companion helpers for <see cref="Result{T}"/>: void results (<see cref="Result{T}"/> of
-/// <see cref="Unit"/>) and aggregation of several results into one via <c>Combine</c>.
+/// <see cref="Unit"/>), aggregation of several results into one via <c>Combine</c>, and
+/// collection combinators (<c>Sequence</c> / <c>Traverse</c>) in <c>Result.Collections.cs</c>.
 /// </summary>
-public static class Result
+public static partial class Result
 {
     /// <summary>Creates a successful void result.</summary>
     public static Result<Unit> Success() => Result<Unit>.Success(Unit.Value);
