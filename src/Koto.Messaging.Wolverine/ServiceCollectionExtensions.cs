@@ -2,6 +2,7 @@ using Koto.Application;
 using Koto.Messaging.Wolverine.Consuming;
 using Koto.Messaging.Wolverine.Publishing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Koto.Messaging.Wolverine;
 
@@ -42,9 +43,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IIntegrationEventPublisher, WolverineIntegrationEventPublisher>();
         services.AddScoped<IIntegrationCommandDispatcher, WolverineIntegrationCommandDispatcher>();
 
-        // Default in-memory idempotency store; replace with a durable store in production:
-        // services.AddScoped<IProcessedMessageStore, PostgresProcessedMessageStore>();
-        services.AddSingleton<IProcessedMessageStore, InMemoryProcessedMessageStore>();
+        // Default in-memory idempotency store (dev/tests). For production install
+        // Koto.Messaging.Wolverine.Postgres and call AddPostgresProcessedMessageStore(...) —
+        // TryAdd here makes the durable registration win regardless of call order.
+        services.TryAddSingleton<IProcessedMessageStore, InMemoryProcessedMessageStore>();
 
         return services;
     }

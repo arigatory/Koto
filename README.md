@@ -98,6 +98,7 @@ Order.Cancel()
 | [`Koto.Infrastructure.Http`](https://www.nuget.org/packages/Koto.Infrastructure.Http) | HTTP client base for calling other services (ACL pattern) |
 | [`Koto.EventSourcing.Marten`](https://www.nuget.org/packages/Koto.EventSourcing.Marten) | Event-sourced aggregates on PostgreSQL via Marten |
 | [`Koto.Messaging.Wolverine`](https://www.nuget.org/packages/Koto.Messaging.Wolverine) | Integration event/command publisher and consumer bases |
+| [`Koto.Messaging.Wolverine.Postgres`](https://www.nuget.org/packages/Koto.Messaging.Wolverine.Postgres) | Durable PostgreSQL idempotency store for consumers |
 | [`Koto.Api.AspNetCore`](https://www.nuget.org/packages/Koto.Api.AspNetCore) | Transport-agnostic `Result<T>` → HTTP: Minimal API / MVC mapping, RFC 7807 Problem Details, `KotoHttpErrorOptions` |
 | [`Koto.Api.FastEndpoints`](https://www.nuget.org/packages/Koto.Api.FastEndpoints) | Command and query endpoints, Problem Details, correlation ID |
 | [`Koto.Observability`](https://www.nuget.org/packages/Koto.Observability) | One-line Serilog + OpenTelemetry setup |

@@ -12,7 +12,7 @@ Wolverine + Kafka implementation of Koto messaging abstractions.
 | `IntegrationCommandConsumerBase<TCommand>` | Kafka command consumer base with structured logging |
 | `CorrelationIdMiddleware` | Propagates Wolverine `Envelope.CorrelationId` via `CorrelationContext` |
 | `IdempotencyMiddleware` | Policy-level deduplication (alternative to the consumer base check) |
-| `IProcessedMessageStore` | Idempotency store abstraction (in-memory default, plug in PostgreSQL for production) |
+| `IProcessedMessageStore` | Idempotency store abstraction (in-memory default; install [Koto.Messaging.Wolverine.Postgres](https://www.nuget.org/packages/Koto.Messaging.Wolverine.Postgres) for a durable PostgreSQL store in production) |
 
 ## Setup
 

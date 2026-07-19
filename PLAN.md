@@ -7,6 +7,13 @@
 
 ## История релизов
 
+- **v0.3.0-preview.5** — новый пакет **`Koto.Messaging.Wolverine.Postgres`** (ADR-021): durable
+  PostgreSQL-реализация `IProcessedMessageStore` (`AddPostgresProcessedMessageStore(connString, opts)`) —
+  дедупликация консюмеров переживает рестарт; авто-создание схемы (`koto.processed_messages`, opt-out),
+  фоновая очистка записей старше `IdempotencyWindow`, валидация идентификаторов схемы/таблицы,
+  `DeleteExpiredAsync` в публичном API. **Не-breaking изменение базового пакета:** регистрация
+  `InMemoryProcessedMessageStore` в `AddKotoWolverine` теперь `TryAddSingleton` (было `AddSingleton`) —
+  durable-стор выигрывает независимо от порядка вызовов. Спека: docs/packages/15-wolverine-postgres.md.
 - **v0.3.0-preview.4** — docs-only релиз, API не менялся: корневой README (таблица 12 пакетов
   со ссылками на nuget, реальный ручной scaffold вместо несуществующего `Koto.Templates`,
   секция Documentation), фикс примера в `Koto.EventSourcing.Marten/README.md`
