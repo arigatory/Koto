@@ -91,33 +91,66 @@ Order.Cancel()
 
 | Package | Purpose |
 |---|---|
-| `Koto.Domain` | `AggregateRoot`, `ValueObject`, `Result<T>`, `Error`, `IRepository` |
-| `Koto.Application` | CQRS dispatcher, pipeline behaviors, integration interfaces |
-| `Koto.Validation` | FluentValidation extensions: `MustBeValueObject`, `MustBeEntity` |
-| `Koto.Infrastructure.EFCore` | EF Core base context, generic repository, outbox wiring |
-| `Koto.Infrastructure.Http` | HTTP client base for calling other services (ACL pattern) |
-| `Koto.EventSourcing.Marten` | Event-sourced aggregates on PostgreSQL via Marten |
-| `Koto.Messaging.Wolverine` | Integration event/command publisher and consumer bases |
-| `Koto.Api.FastEndpoints` | Command and query endpoints, Problem Details, correlation ID |
-| `Koto.Observability` | One-line Serilog + OpenTelemetry setup |
-| `Koto.Testing` | Aggregate test fixture, fake repository, integration test base |
+| [`Koto.Domain`](https://www.nuget.org/packages/Koto.Domain) | `AggregateRoot`, `ValueObject`, `Result<T>`, `Error`, strongly-typed IDs |
+| [`Koto.Application`](https://www.nuget.org/packages/Koto.Application) | CQRS dispatcher, pipeline behaviors, `IRepository`, integration interfaces |
+| [`Koto.Validation`](https://www.nuget.org/packages/Koto.Validation) | FluentValidation extensions: `MustBeValueObject`, `MustBeEntity` |
+| [`Koto.Infrastructure.EFCore`](https://www.nuget.org/packages/Koto.Infrastructure.EFCore) | EF Core base context, generic repository, outbox wiring |
+| [`Koto.Infrastructure.Http`](https://www.nuget.org/packages/Koto.Infrastructure.Http) | HTTP client base for calling other services (ACL pattern) |
+| [`Koto.EventSourcing.Marten`](https://www.nuget.org/packages/Koto.EventSourcing.Marten) | Event-sourced aggregates on PostgreSQL via Marten |
+| [`Koto.Messaging.Wolverine`](https://www.nuget.org/packages/Koto.Messaging.Wolverine) | Integration event/command publisher and consumer bases |
+| [`Koto.Api.AspNetCore`](https://www.nuget.org/packages/Koto.Api.AspNetCore) | Transport-agnostic `Result<T>` → HTTP: Minimal API / MVC mapping, RFC 7807 Problem Details, `KotoHttpErrorOptions` |
+| [`Koto.Api.FastEndpoints`](https://www.nuget.org/packages/Koto.Api.FastEndpoints) | Command and query endpoints, Problem Details, correlation ID |
+| [`Koto.Observability`](https://www.nuget.org/packages/Koto.Observability) | One-line Serilog + OpenTelemetry setup |
+| [`Koto.Scheduling`](https://www.nuget.org/packages/Koto.Scheduling) | Quartz.NET-based scheduled jobs and batch processing |
+| [`Koto.Testing`](https://www.nuget.org/packages/Koto.Testing) | Aggregate test fixture, fake repository, integration test base |
 
 ---
 
 ## Getting started
 
-```bash
-dotnet add package Koto.Domain
-dotnet add package Koto.Application
-dotnet add package Koto.Infrastructure.EFCore
-```
-
-Or scaffold a full microservice:
+Packages are published to [nuget.org](https://www.nuget.org/profiles/arigatory) as pre-releases:
 
 ```bash
-dotnet new install Koto.Templates
-dotnet new koto-microservice --name OrderService --arch clean
+dotnet add package Koto.Domain --prerelease
+dotnet add package Koto.Application --prerelease
+dotnet add package Koto.Infrastructure.EFCore --prerelease
 ```
+
+### Scaffold a service by hand
+
+The typical clean-architecture layout is four projects, each referencing one slice of Koto:
+
+| Project | Koto packages |
+|---|---|
+| `MyService.Domain` | `Koto.Domain` |
+| `MyService.Application` | `Koto.Application`, `Koto.Validation` |
+| `MyService.Infrastructure` | `Koto.Infrastructure.EFCore` |
+| `MyService.Api` | `Koto.Api.FastEndpoints`, `Koto.Observability` |
+
+Wire it up in `Program.cs`:
+
+```csharp
+builder.Services.AddKotoApi();          // Result→HTTP, Problem Details, correlation ID
+builder.Services.AddFastEndpoints();
+builder.Services.AddKotoApplication(    // CQRS handlers + opt-in behaviors
+    typeof(PlaceOrderHandler).Assembly);
+
+var app = builder.Build();
+app.UseKotoApi();                       // correlation middleware + global exception handler
+app.UseFastEndpoints();
+```
+
+Add `AddKotoValidation(...)`, `AddKotoObservability(...)`, `AddKotoWolverine(...)`, `AddKotoMarten(...)` or `AddKotoScheduling(...)` as your service grows — every package is independent and opt-in.
+
+> `AddKotoEFCore<TContext>` wires the Wolverine outbox and expects Wolverine to be configured. Without Wolverine, register your `KotoDbContext` with plain `AddDbContext` and hand-written repositories — everything else works the same.
+
+---
+
+## Documentation
+
+- Per-package guides: `src/<Package>/README.md` (also shown on each package's nuget.org page)
+- Architecture decision records: [`adr/`](adr/) — 20 ADRs covering Result, repositories, events, versioning
+- Design principles in depth: [`docs/principles/`](docs/principles/) — DDD, errors-and-results, architecture, naming
 
 ---
 

@@ -1,10 +1,12 @@
 # Koto — .NET DDD/Microservices Library Suite
 
 Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и Kafka в .NET микросервисах.
-Первый потребитель: **Task137** (`/Users/ivan/source/task137`).
+Референс-потребитель: **agent-server** (`/Users/ivan/source/sk-agent-demo/koto-agent/apps/agent-server`) — реальный wiring всех слоёв (Domain/Application/Validation/EFCore/FastEndpoints/Observability) через PackageReference.
 
 ## Текущий статус
-- **Phase 1** — Domain Core: DONE (`Koto.Domain` ✓, `Koto.Application` ✓, `Koto.Validation` ✓)
+- Все **12 пакетов** собраны и опубликованы на nuget.org (профиль `arigatory`), версия `0.3.0-preview.x`.
+- Релиз: bump `<Version>` в `src/Directory.Build.props` → тег `vX.Y.Z` → push → CI `publish.yml` пакует (версия из тега) и пушит все пакеты на nuget.org.
+- Шаблоны (`Koto.Templates`, Phase 5) — НЕ начаты; новые сервисы скаффолдятся вручную.
 - Детальный индекс фаз: `PLAN.md`
 - Планы пакетов: `docs/packages/`
 

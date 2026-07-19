@@ -66,11 +66,11 @@ builder.Services.AddKotoMarten(
 ### 3 — Use the repository
 
 ```csharp
-public class PlaceOrderHandler : ICommandHandler<PlaceOrderCommand, Result<OrderId>>
+public class PlaceOrderHandler : ICommandHandler<PlaceOrderCommand, OrderId>
 {
     private readonly IEventSourcedRepository<Order, OrderId> _orders;
 
-    public async Task<Result<OrderId>> Handle(PlaceOrderCommand cmd, CancellationToken ct)
+    public async Task<Result<OrderId>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct = default)
     {
         var order = Order.Place(OrderId.New(), cmd.Total);
         await _orders.SaveAsync(order, ct);

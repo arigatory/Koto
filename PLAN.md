@@ -7,6 +7,11 @@
 
 ## История релизов
 
+- **v0.3.0-preview.4** — docs-only релиз, API не менялся: корневой README (таблица 12 пакетов
+  со ссылками на nuget, реальный ручной scaffold вместо несуществующего `Koto.Templates`,
+  секция Documentation), фикс примера в `Koto.EventSourcing.Marten/README.md`
+  (`Handle` → `HandleAsync`, `ICommandHandler<TCommand, TResult>` без `Result<>` в type arg),
+  актуализация CLAUDE.md (12 пакетов на nuget, референс-потребитель agent-server).
 - **v0.3.0-preview.1** — критический фикс пайплайна + multi-error Result + FluentValidation 12 +
   новый пакет `Koto.Api.AspNetCore`. **Breaking changes / migration notes для потребителей (IceFlow, Task137):**
   - **Behaviors резолвятся по конкретному типу команды/запроса** (`IPipelineBehavior<CreateUserCommand, Result<T>>`),
