@@ -7,6 +7,16 @@
 
 ## История релизов
 
+- **v0.3.0-preview.6** — **фикс потери доменных событий вне Wolverine-хендлеров** (ADR-022):
+  `PublishDomainEventsFromEntityFrameworkCore` — codegen-политика, работающая только внутри хендлеров;
+  события из обычных HTTP-флоу молча терялись. Новый `EfCoreUnitOfWork<TContext>` в
+  `Koto.Infrastructure.EFCore` — дефолтная реализация `IUnitOfWork` (регистрируется в
+  `AddKotoEFCore` через TryAddScoped): `CommitAsync` публикует uncommitted domain events через
+  `IDbContextOutbox` в одной транзакции с изменениями. E2E-тест `DomainEventOutboxFlowTests`.
+  **Docs-фиксы:** README EFCore — durable outbox требует `PersistMessagesWithPostgresql` +
+  `UseDurableOutboxOnAllSendingEndpoints` + `Discovery.IncludeAssembly` (раньше опускалось);
+  README Wolverine — `AutoProvisionTopics()` → `AutoProvision()`, идемпотентность → ссылка на
+  `AddPostgresProcessedMessageStore`.
 - **v0.3.0-preview.5** — новый пакет **`Koto.Messaging.Wolverine.Postgres`** (ADR-021): durable
   PostgreSQL-реализация `IProcessedMessageStore` (`AddPostgresProcessedMessageStore(connString, opts)`) —
   дедупликация консюмеров переживает рестарт; авто-создание схемы (`koto.processed_messages`, opt-out),

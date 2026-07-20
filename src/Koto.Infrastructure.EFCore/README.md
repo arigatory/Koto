@@ -46,13 +46,41 @@ public class AppDbContext : KotoDbContext
 builder.Services.AddKotoEFCore<AppDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("Db")));
 
-// Wolverine setup — enable automatic domain event dispatch via outbox
+// Wolverine setup — durable outbox (обязательно для доставки событий)
 builder.Host.UseWolverine(opts =>
 {
+    // Хендлеры вне entry assembly нужно включить в discovery явно:
+    opts.Discovery.IncludeAssembly(typeof(SomeHandler).Assembly);
+
+    // Durable outbox: конверты хранятся в Postgres сервиса
+    opts.PersistMessagesWithPostgresql(connectionString);   // WolverineFx.Postgresql
+    opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
+
     opts.UseEntityFrameworkCoreTransactions();
+
+    // Для сохранений ВНУТРИ Wolverine-хендлеров (консюмеры):
     opts.PublishDomainEventsFromEntityFrameworkCore<IHasDomainEvents, IDomainEvent>(
         e => e.DomainEvents);
 });
+```
+
+### Domain events from plain code (HTTP endpoints)
+
+`PublishDomainEventsFromEntityFrameworkCore` is a codegen policy that only runs **inside
+Wolverine handlers**. For saves from ordinary code (FastEndpoints → `ICommandHandler`),
+`AddKotoEFCore` registers `EfCoreUnitOfWork<TContext>` as the default `IUnitOfWork`
+(`TryAddScoped` — your own registration wins): on `CommitAsync` it collects uncommitted
+domain events from tracked aggregates and publishes them through Wolverine's EF Core outbox
+in the same transaction as your entity changes:
+
+```csharp
+public async Task<Result<OrderId>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
+{
+    var order = Order.Place(...);          // AddDomainEvent(...) inside
+    _orders.Add(order.Value);
+    await _unitOfWork.CommitAsync(ct);     // entities + envelopes in one transaction → handler
+    return order.Value.Id;
+}
 ```
 
 ### 3 — Use a repository

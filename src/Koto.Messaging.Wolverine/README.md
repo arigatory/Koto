@@ -26,7 +26,7 @@ builder.Services.AddKotoWolverine(opts =>
 
 builder.Host.UseWolverine(opts =>
 {
-    opts.UseKafka("localhost:9092").AutoProvisionTopics();
+    opts.UseKafka("localhost:9092").AutoProvision();
 
     // Route outbound events to topics
     opts.PublishMessage<OrderPlacedEvent>().ToKafkaTopic("orders.order-placed");
@@ -68,8 +68,9 @@ public sealed class PaymentProcessedConsumer
 
 ## Production idempotency store
 
-Replace `InMemoryProcessedMessageStore` with a durable store:
+Replace `InMemoryProcessedMessageStore` with the durable PostgreSQL store from
+[Koto.Messaging.Wolverine.Postgres](https://www.nuget.org/packages/Koto.Messaging.Wolverine.Postgres):
 
 ```csharp
-builder.Services.AddScoped<IProcessedMessageStore, PostgresProcessedMessageStore>();
+builder.Services.AddPostgresProcessedMessageStore(connectionString);
 ```

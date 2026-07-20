@@ -2,6 +2,7 @@ using Koto.Application;
 using Koto.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wolverine.EntityFrameworkCore;
 
 namespace Koto.Infrastructure.EFCore;
@@ -24,6 +25,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddDbContextWithWolverineIntegration<TContext>(configure);
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
+        // Default unit of work: commits publish domain events through the Wolverine outbox.
+        // TryAdd — a hand-written IUnitOfWork registered by the consumer wins.
+        services.TryAddScoped<IUnitOfWork, EfCoreUnitOfWork<TContext>>();
         return services;
     }
 }
