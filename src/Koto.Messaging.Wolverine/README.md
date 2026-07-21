@@ -80,10 +80,26 @@ builder.Services.AddPostgresProcessedMessageStore(connectionString);
 ```csharp
 builder.Host.UseWolverine(opts =>
 {
-    opts.UseKotoKafka(kafkaConnectionString, typeof(SomeHandler).Assembly)  // transport + AutoProvision + correlation + discovery
+    // transport + AutoProvision + explicit consumer group + correlation + discovery + retry policy
+    opts.UseKotoKafka(kafkaConnectionString, "my-service", typeof(SomeHandler).Assembly)
         .PublishIntegrationEvents(typeof(OrderPlacedV1).Assembly);          // route by `public const string Topic`
     // + opts.UseKotoDurableOutbox(pgConnectionString) из Koto.Messaging.Wolverine.Postgres
 });
 ```
 
 Каждый `IIntegrationEvent` контрактной сборки обязан объявлять `public const string Topic = "service.event-name";` — тип без константы валит старт (fail fast вместо молчаливо потерянных событий).
+
+## Default consumer retry policy
+
+`UseKotoKafka` устанавливает дефолтную политику ошибок консюмеров (без неё Wolverine уводит
+сообщение в dead letter после первого же исключения):
+
+1. inline-повторы с паузами 200мс → 1с → 3с — гасят короткие гонки топиков
+   («событие-предпосылка ещё не обработано» — штатная ситуация при подписке на несколько топиков;
+   консюмер в этом случае просто бросает исключение);
+2. отложенные повторы через 10с → 30с → 60с (при durable inbox переживают рестарт);
+3. только затем — dead letter queue.
+
+Более специфичные политики сервиса (`opts.Policies.OnException<MyException>()...`) имеют приоритет
+над этим дефолтом. Паттерн консюмера: если обязательные предпосылки события ещё не готовы —
+бросайте исключение, чтобы сработал повтор; молчаливый `return` теряет данные навсегда.

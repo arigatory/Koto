@@ -4,6 +4,7 @@ using Koto.Application;
 using Koto.Messaging.Wolverine.Middleware;
 using Confluent.Kafka;
 using Wolverine;
+using Wolverine.ErrorHandling;
 using Wolverine.Kafka;
 
 namespace Koto.Messaging.Wolverine;
@@ -72,6 +73,21 @@ public static class WolverineOptionsExtensions
             })
             .AutoProvision();
         options.Policies.AddMiddleware<CorrelationIdMiddleware>();
+
+        // Дефолтная политика ошибок консюмеров. Без неё Wolverine после первого
+        // исключения сразу уводит сообщение в dead letter — а при подписке на несколько
+        // топиков гонка «событие-предпосылка ещё не обработано» является штатной ситуацией:
+        // консюмер бросает, и сообщение должно ПОВТОРИТЬСЯ, а не потеряться.
+        // Быстрые inline-повторы гасят короткие гонки, отложенные — длинные хвосты
+        // (при durable inbox переживают и рестарт), dead letter — только после всех попыток.
+        // Более специфичные политики сервисов (по типу исключения) имеют приоритет.
+        options.Policies.OnException<Exception>()
+            .RetryWithCooldown(
+                TimeSpan.FromMilliseconds(200), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3))
+            .Then.ScheduleRetry(
+                TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(60))
+            .Then.MoveToErrorQueue();
+
         return options;
     }
 

@@ -24,6 +24,18 @@ public sealed class WolverineOptionsExtensionsTests
     }
 
     [Fact]
+    public void UseKotoKafka_registers_default_consumer_retry_policy()
+    {
+        var options = new WolverineOptions();
+
+        options.UseKotoKafka("localhost:9092", "tests");
+
+        // Без политики Wolverine после первого исключения уводит сообщение в dead letter —
+        // гонки топиков («предпосылка ещё не обработана») теряли бы события навсегда.
+        options.Policies.Failures.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void UseKotoKafka_rejects_empty_connection_string()
     {
         var options = new WolverineOptions();
