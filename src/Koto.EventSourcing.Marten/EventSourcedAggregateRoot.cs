@@ -7,7 +7,7 @@ namespace Koto.EventSourcing.Marten;
 /// as domain events; the aggregate is reconstituted by replaying them.
 /// </summary>
 /// <typeparam name="TId">The aggregate identifier type.</typeparam>
-public abstract class EventSourcedAggregateRoot<TId> : Entity<TId>
+public abstract class EventSourcedAggregateRoot<TId> : Entity<TId>, IEventSourcedAggregate
     where TId : notnull
 {
     private readonly List<IDomainEvent> _uncommittedEvents = [];

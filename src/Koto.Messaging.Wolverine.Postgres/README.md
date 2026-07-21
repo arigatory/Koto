@@ -49,3 +49,14 @@ Delivery stays **at-least-once**: the store marks an event as processed *after* 
 ## License
 
 MIT
+
+## Durable outbox defaults
+
+```csharp
+builder.Host.UseWolverine(opts =>
+{
+    opts.UseKotoKafka(kafka, typeof(SomeHandler).Assembly)
+        .PublishIntegrationEvents(typeof(OrderPlacedV1).Assembly)
+        .UseKotoDurableOutbox(connectionString); // envelopes in Postgres + EF transactions + domain event scraping
+});
+```

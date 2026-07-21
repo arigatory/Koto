@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\"/>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
   </ItemGroup>
 
 </Project>

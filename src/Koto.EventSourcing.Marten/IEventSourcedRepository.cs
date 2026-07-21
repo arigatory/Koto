@@ -16,7 +16,15 @@ public interface IEventSourcedRepository<TAgg, TId>
     Task<TAgg?> GetByIdAsync(TId id, CancellationToken ct = default);
 
     /// <summary>
-    /// Appends uncommitted events to the aggregate's stream and saves them atomically.
+    /// Appends uncommitted events to the aggregate's stream and saves them atomically
+    /// (single-aggregate convenience: <see cref="Append"/> + commit).
     /// </summary>
     Task SaveAsync(TAgg aggregate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Stages uncommitted events into the current session WITHOUT saving. Combine multiple
+    /// aggregates and documents in one transaction, then commit via <c>IUnitOfWork.CommitAsync</c>
+    /// (см. <see cref="MartenUnitOfWork"/>). Events are cleared only after the commit succeeds.
+    /// </summary>
+    void Append(TAgg aggregate);
 }

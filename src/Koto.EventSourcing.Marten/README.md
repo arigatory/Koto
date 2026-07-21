@@ -93,3 +93,16 @@ public sealed class OrderSummaryProjection : AsyncProjection<OrderSummary, Guid>
 ## Using Marten alongside EF Core
 
 Marten and `Koto.Infrastructure.EFCore` can share the same PostgreSQL instance. Marten manages event streams (`mt_events`, `mt_streams`); EF Core manages read models and other entities.
+
+## Atomic multi-stream commits
+
+```csharp
+// перевод: события в двух стримах + идемпотентный маркер — одна транзакция
+accounts.Append(from);
+accounts.Append(to);
+session.Store(new ProcessedOperation($"transfer:{operationId}"));
+await unitOfWork.CommitAsync(ct);   // MartenUnitOfWork, регистрируется AddKotoMarten (TryAddScoped)
+```
+
+`SaveAsync` остаётся одноагрегатным шорткатом (Append + commit). Uncommitted events агрегатов
+очищаются только после успешного коммита; `RollbackAsync` отбрасывает всё застейдженное.

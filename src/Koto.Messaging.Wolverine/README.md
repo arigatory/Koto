@@ -74,3 +74,16 @@ Replace `InMemoryProcessedMessageStore` with the durable PostgreSQL store from
 ```csharp
 builder.Services.AddPostgresProcessedMessageStore(connectionString);
 ```
+
+## Convention bootstrap
+
+```csharp
+builder.Host.UseWolverine(opts =>
+{
+    opts.UseKotoKafka(kafkaConnectionString, typeof(SomeHandler).Assembly)  // transport + AutoProvision + correlation + discovery
+        .PublishIntegrationEvents(typeof(OrderPlacedV1).Assembly);          // route by `public const string Topic`
+    // + opts.UseKotoDurableOutbox(pgConnectionString) из Koto.Messaging.Wolverine.Postgres
+});
+```
+
+Каждый `IIntegrationEvent` контрактной сборки обязан объявлять `public const string Topic = "service.event-name";` — тип без константы валит старт (fail fast вместо молчаливо потерянных событий).

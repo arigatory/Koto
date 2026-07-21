@@ -7,6 +7,23 @@
 
 ## История релизов
 
+- **v0.3.0-preview.8** — «perfection pass» по итогам RBG фаз 0–2, четыре DX-улучшения + один enabler:
+  1. **Авто-конвертация StronglyTypedId** (ADR-023): `KotoDbContext` сам регистрирует pre-convention
+     конвертеры для всех id-типов из сборок сущностей — ручные `Properties<XId>().HaveConversion<…>()`
+     в контекстах потребителей больше не нужны (включая не-ключевые ссылки и ключи owned-типов).
+  2. **`INonTransactionalCommand`** (маркер в Koto.Application): команды с security-счётчиками
+     (OTP-попытки) исключаются из `TransactionBehavior` и управляют коммитами явно.
+  3. **Конвенционный bootstrap Wolverine** (ADR-024): `UseKotoKafka(bootstrap, assemblies)` +
+     `PublishIntegrationEvents(contractAssemblies)` (роутинг по `public const string Topic`,
+     fail-fast при отсутствии) в базовом пакете; `UseKotoDurableOutbox(pg)` в
+     Koto.Messaging.Wolverine.Postgres (тянет WolverineFx.Postgresql/EntityFrameworkCore).
+  4. **`CommandEndpoint`/`QueryEndpoint` реализуют `HandleAsync` sealed** — сабклассы содержат только
+     `Configure()`. **Breaking:** свои переопределения `HandleAsync` в наследниках удалить
+     (Mapped-варианты уже работали так).
+  5. **Marten multi-stream UoW** (ADR-025): `IEventSourcedRepository.Append` + `MartenUnitOfWork`
+     (TryAddScoped IUnitOfWork в `AddKotoMarten`) — атомарный коммит нескольких стримов и документов
+     одной транзакцией; enabler ledger-сценариев (Wallet RBG). **Breaking:**
+     `MartenEventSourcedRepository` получил второй ctor-параметр `MartenAggregateTracker`.
 - **v0.3.0-preview.7** — пагинация: `PagedList<T>` в `Koto.Application` (Items/Page/PageSize/TotalCount,
   TotalPages/HasNext/HasPrevious, `Map`, `Empty`) + `IQueryable<T>.ToPagedListAsync(page, pageSize)`
   в `Koto.Infrastructure.EFCore` (COUNT + Skip/Take; требует упорядоченного запроса).

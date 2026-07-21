@@ -13,11 +13,13 @@ public class MartenEventSourcedRepository<TAgg, TId> : IEventSourcedRepository<T
     where TId : StronglyTypedId<Guid>
 {
     private readonly IDocumentSession _session;
+    private readonly MartenAggregateTracker _tracker;
 
     /// <summary>Initializes a new <see cref="MartenEventSourcedRepository{TAgg,TId}"/>.</summary>
-    public MartenEventSourcedRepository(IDocumentSession session)
+    public MartenEventSourcedRepository(IDocumentSession session, MartenAggregateTracker tracker)
     {
         _session = session;
+        _tracker = tracker;
     }
 
     /// <inheritdoc/>
@@ -33,11 +35,18 @@ public class MartenEventSourcedRepository<TAgg, TId> : IEventSourcedRepository<T
     /// <inheritdoc/>
     public async Task SaveAsync(TAgg aggregate, CancellationToken ct = default)
     {
+        Append(aggregate);
+        await _session.SaveChangesAsync(ct).ConfigureAwait(false);
+        _tracker.ClearAll();
+    }
+
+    /// <inheritdoc/>
+    public void Append(TAgg aggregate)
+    {
         var events = aggregate.UncommittedEvents;
         if (events.Count == 0) return;
 
         _session.Events.Append(aggregate.Id.Value, events.Cast<object>().ToArray());
-        await _session.SaveChangesAsync(ct).ConfigureAwait(false);
-        aggregate.ClearUncommittedEvents();
+        _tracker.Track(aggregate);
     }
 }

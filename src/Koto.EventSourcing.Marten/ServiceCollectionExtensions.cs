@@ -29,6 +29,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped(
             typeof(IEventSourcedRepository<,>),
             typeof(MartenEventSourcedRepository<,>));
+        services.AddScoped<MartenAggregateTracker>();
+        // TryAdd: своя реализация потребителя выигрывает.
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions
+            .TryAddScoped<Koto.Application.IUnitOfWork, MartenUnitOfWork>(services);
 
         return services;
     }

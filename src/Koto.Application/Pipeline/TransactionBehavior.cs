@@ -4,7 +4,8 @@ namespace Koto.Application;
 
 /// <summary>
 /// Pipeline behavior that wraps commands in a database transaction via <see cref="IUnitOfWork"/>.
-/// Queries (<see cref="IQuery{TResult}"/>) are passed through unchanged.
+/// Queries (<see cref="IQuery{TResult}"/>) and commands marked with
+/// <see cref="INonTransactionalCommand"/> are passed through unchanged.
 /// Commits on a successful <see cref="Result{T}"/>; rolls back on a failure <see cref="Result{T}"/>
 /// or a thrown exception. A command dispatched from inside another command's handler joins the
 /// ambient transaction (when <see cref="IUnitOfWork.HasActiveTransaction"/> reports one) —
@@ -15,7 +16,8 @@ namespace Koto.Application;
 public sealed class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
 {
     private static readonly bool IsCommand =
-        typeof(ICommandBase).IsAssignableFrom(typeof(TRequest));
+        typeof(ICommandBase).IsAssignableFrom(typeof(TRequest))
+        && !typeof(INonTransactionalCommand).IsAssignableFrom(typeof(TRequest));
 
     private readonly IUnitOfWork _uow;
 
