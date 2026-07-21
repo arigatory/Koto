@@ -14,7 +14,7 @@ public sealed class WolverineOptionsExtensionsTests
     public void PublishIntegrationEvents_routes_events_with_topic_constant()
     {
         var options = new WolverineOptions();
-        options.UseKotoKafka("localhost:9092");
+        options.UseKotoKafka("localhost:9092", "tests");
 
         var act = () => options.PublishIntegrationEvents(typeof(GoodEvent).Assembly);
 
@@ -28,7 +28,7 @@ public sealed class WolverineOptionsExtensionsTests
     {
         var options = new WolverineOptions();
 
-        var act = () => options.UseKotoKafka("  ");
+        var act = () => options.UseKotoKafka("  ", "tests");
 
         act.Should().Throw<ArgumentException>();
     }

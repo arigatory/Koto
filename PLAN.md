@@ -7,6 +7,10 @@
 
 ## История релизов
 
+- **v0.3.0-preview.12** — **breaking:** `UseKotoKafka` требует явную consumer group
+  (`UseKotoKafka(bootstrap, consumerGroup, assemblies)`): без неё два сервиса могли оказаться
+  в одной Kafka-группе с разными подписками — партиции не назначаются, события молча теряются
+  (найдено двухсервисным сага-тестом RBG). Также ставится `AutoOffsetReset.Earliest`.
 - **v0.3.0-preview.11** — **фикс: `AddServiceHttpClient` был сломан из коробки** — регистрировал
   `CorrelationIdHandler`, зависящий от `ICorrelationIdAccessor`, реализацию которого никто не
   регистрировал (контейнер падал на валидации). Добавлен `NullCorrelationIdAccessor` (TryAdd);

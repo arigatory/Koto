@@ -1,6 +1,7 @@
 using System.Reflection;
 using Koto.Application;
 using Koto.Messaging.Wolverine.Middleware;
+using Confluent.Kafka;
 using Wolverine;
 using Wolverine.Kafka;
 
@@ -10,24 +11,41 @@ namespace Koto.Messaging.Wolverine;
 public static class WolverineOptionsExtensions
 {
     /// <summary>
-    /// Kafka-транспорт с авто-созданием топиков, корреляция на каждом хендлере и
-    /// discovery хендлеров в перечисленных сборках (Wolverine сам сканирует только
-    /// entry assembly; классы должны называться <c>*Handler</c>/<c>*Consumer</c>).
+    /// Kafka-транспорт с авто-созданием топиков, явной consumer group сервиса,
+    /// корреляцией на каждом хендлере и discovery хендлеров в перечисленных сборках
+    /// (Wolverine сам сканирует только entry assembly; классы должны называться
+    /// <c>*Handler</c>/<c>*Consumer</c>).
+    /// <para>
+    /// Consumer group ОБЯЗАТЕЛЬНА и должна быть уникальна per-service (конвенция:
+    /// имя сервиса): без неё два сервиса могут попасть в одну группу с разными
+    /// подписками — Kafka перестаёт назначать партиции, события молча не доставляются
+    /// (проявляется в multi-host тестах, где entry assembly общая).
+    /// <c>AutoOffsetReset.Earliest</c> — новый сервис дочитывает опубликованное до его старта.
+    /// </para>
     /// </summary>
     /// <param name="options">Опции Wolverine.</param>
     /// <param name="kafkaConnectionString">Kafka bootstrap servers.</param>
+    /// <param name="consumerGroup">Уникальная consumer group сервиса (обычно его имя).</param>
     /// <param name="handlerAssemblies">Дополнительные сборки с хендлерами (Application и т.п.).</param>
     public static WolverineOptions UseKotoKafka(
         this WolverineOptions options,
         string kafkaConnectionString,
+        string consumerGroup,
         params Assembly[] handlerAssemblies)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kafkaConnectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(consumerGroup);
 
         foreach (var assembly in handlerAssemblies)
             options.Discovery.IncludeAssembly(assembly);
 
-        options.UseKafka(kafkaConnectionString).AutoProvision();
+        options.UseKafka(kafkaConnectionString)
+            .ConfigureConsumers(consumer =>
+            {
+                consumer.GroupId = consumerGroup;
+                consumer.AutoOffsetReset = AutoOffsetReset.Earliest;
+            })
+            .AutoProvision();
         options.Policies.AddMiddleware<CorrelationIdMiddleware>();
         return options;
     }
