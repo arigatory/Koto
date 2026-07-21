@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Koto.Infrastructure.Http;
 
@@ -38,6 +39,8 @@ public static class ServiceCollectionExtensions
         var options = new ServiceHttpClientOptions();
         configure?.Invoke(options);
 
+        // Дефолтный no-op accessor: клиент работает из коробки; приложение может подменить.
+        services.TryAddSingleton<ICorrelationIdAccessor, NullCorrelationIdAccessor>();
         services.AddTransient<CorrelationIdHandler>();
 
         var httpClientBuilder = services.AddHttpClient<TImplementation>(name, client =>

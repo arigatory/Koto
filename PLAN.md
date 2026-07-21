@@ -7,6 +7,10 @@
 
 ## История релизов
 
+- **v0.3.0-preview.11** — **фикс: `AddServiceHttpClient` был сломан из коробки** — регистрировал
+  `CorrelationIdHandler`, зависящий от `ICorrelationIdAccessor`, реализацию которого никто не
+  регистрировал (контейнер падал на валидации). Добавлен `NullCorrelationIdAccessor` (TryAdd);
+  приложение может подменить своим мостом к API-слою.
 - **v0.3.0-preview.10** — `AddKotoMarten(..., asyncDaemon: DaemonMode.Solo)` — опциональный запуск
   Marten async-демона (нужен async-проекциям вроде statement-историй); раньше требовался прямой
   доступ к `AddMarten()`-expression, который Koto скрывает.
