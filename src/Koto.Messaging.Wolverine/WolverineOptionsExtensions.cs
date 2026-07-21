@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Koto.Application;
 using Koto.Messaging.Wolverine.Middleware;
 using Confluent.Kafka;
@@ -10,6 +11,30 @@ namespace Koto.Messaging.Wolverine;
 /// <summary>Однострочная настройка Wolverine по конвенциям Koto.</summary>
 public static class WolverineOptionsExtensions
 {
+    /// <summary>JSON-настройки контрактов шины (web-casing — как в HTTP API).</summary>
+    public static readonly JsonSerializerOptions ContractJson = new(JsonSerializerDefaults.Web);
+
+    /// <summary>
+    /// Подписка на интеграционное событие по конвенции: топик — из <c>T.Topic</c>,
+    /// payload — чистый JSON (см. <see cref="PublishIntegrationEvents"/>), обработка inline.
+    /// </summary>
+    public static WolverineOptions ListenToIntegrationEvent<T>(this WolverineOptions options)
+        where T : IIntegrationEvent
+    {
+        var topicField = typeof(T).GetField(
+            "Topic", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+        if (topicField?.GetRawConstantValue() is not string topic || string.IsNullOrWhiteSpace(topic))
+        {
+            throw new InvalidOperationException(
+                $"Integration event '{typeof(T).FullName}' must declare 'public const string Topic'");
+        }
+
+        options.ListenToKafkaTopic(topic)
+            .ReceiveRawJson<T>(ContractJson)
+            .ProcessInline();
+        return options;
+    }
+
     /// <summary>
     /// Kafka-транспорт с авто-созданием топиков, явной consumer group сервиса,
     /// корреляцией на каждом хендлере и discovery хендлеров в перечисленных сборках
@@ -87,7 +112,12 @@ public static class WolverineOptionsExtensions
                 var expression = publishMethod.MakeGenericMethod(eventType).Invoke(options, null)!;
                 var toKafkaTopic = typeof(KafkaTransportExtensions).GetMethod(
                     nameof(KafkaTransportExtensions.ToKafkaTopic))!;
-                toKafkaTopic.Invoke(null, [expression, topic]);
+                var subscriber = toKafkaTopic.Invoke(null, [expression, topic])!;
+
+                // Schema-прозрачная шина: чистый JSON без Wolverine-заголовков —
+                // топик читаем любым инструментом/стеком (тип ↔ топик 1:1).
+                var publishRawJson = subscriber.GetType().GetMethod("PublishRawJson")!;
+                publishRawJson.Invoke(subscriber, [ContractJson]);
             }
         }
 

@@ -7,6 +7,11 @@
 
 ## История релизов
 
+- **v0.3.0-preview.13** — **schema-прозрачная шина**: `PublishIntegrationEvents` публикует чистый JSON
+  (web-casing, без Wolverine-заголовков) — топики читаются любым инструментом/стеком; новый
+  `ListenToIntegrationEvent<T>()` — подписка по конвенции (`T.Topic` + `ReceiveRawJson<T>` + inline).
+  Без этого сообщения не-Wolverine продюсеров (интеграционные тесты, другие стеки) молча
+  не маппились в типы.
 - **v0.3.0-preview.12** — **breaking:** `UseKotoKafka` требует явную consumer group
   (`UseKotoKafka(bootstrap, consumerGroup, assemblies)`): без неё два сервиса могли оказаться
   в одной Kafka-группе с разными подписками — партиции не назначаются, события молча теряются
