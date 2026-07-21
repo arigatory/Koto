@@ -7,6 +7,9 @@
 
 ## История релизов
 
+- **v0.3.0-preview.10** — `AddKotoMarten(..., asyncDaemon: DaemonMode.Solo)` — опциональный запуск
+  Marten async-демона (нужен async-проекциям вроде statement-историй); раньше требовался прямой
+  доступ к `AddMarten()`-expression, который Koto скрывает.
 - **v0.3.0-preview.9** — s2s-аутентификация для HTTP ACL (закрывает последний запланированный
   пробел RBG фазы 3): клиент — `AddServiceHttpClient(..., o => o.ApiKey = key)` добавляет
   `X-Service-Key` к каждому запросу (`Koto.Infrastructure.Http`); сервер — схема `ServiceKey`

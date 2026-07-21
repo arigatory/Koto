@@ -1,4 +1,5 @@
 using JasperFx;
+using JasperFx.Events.Daemon;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,17 +15,23 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="connectionString">PostgreSQL connection string.</param>
     /// <param name="configure">Optional additional Marten configuration.</param>
+    /// <param name="asyncDaemon">Режим async-демона проекций (null — не запускать).</param>
     public static IServiceCollection AddKotoMarten(
         this IServiceCollection services,
         string connectionString,
-        Action<StoreOptions>? configure = null)
+        Action<StoreOptions>? configure = null,
+        DaemonMode? asyncDaemon = null)
     {
-        services.AddMarten(opts =>
+        var marten = services.AddMarten(opts =>
         {
             opts.Connection(connectionString);
             opts.AutoCreateSchemaObjects = AutoCreate.All;
             configure?.Invoke(opts);
         });
+
+        // Async-проекции (ProjectionLifecycle.Async) требуют работающего демона.
+        if (asyncDaemon is not null)
+            marten.AddAsyncDaemon(asyncDaemon.Value);
 
         services.AddScoped(
             typeof(IEventSourcedRepository<,>),
