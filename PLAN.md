@@ -7,6 +7,26 @@
 
 ## История релизов
 
+- **v0.4.0** — **первый стабильный релиз** (сведение обкатки на Real Board Games, RBG фазы 0–8):
+  все 14 пакетов выходят без суффикса preview; API заморожен по состоянию preview.15, breaking
+  изменений нет. EF Core выровнен до 10.0.10. Установка теперь без `--prerelease`.
+  Полный список закрытых за проект пробелов: durable ProcessedMessageStore (p5), фикс потери
+  доменных событий вне Wolverine-хендлеров / `EfCoreUnitOfWork` (p6), пагинация `PagedList<T>` (p7),
+  perfection pass — `INonTransactionalCommand`, sealed `HandleAsync`, DX-фиксы (p8), s2s-auth для
+  HTTP ACL (p9), Marten async daemon opt-in (p10), фикс `AddServiceHttpClient` (p11), обязательная
+  consumer group (p12), schema-прозрачная шина (p13), дефолтная retry-политика консюмеров (p14),
+  `Koto.Testing.Integration` + `IntegrationEventTopics` (p15).
+
+- **v0.3.0-preview.15** — новый пакет **`Koto.Testing.Integration`** (правило трёх из тестов RBG):
+  `HeaderTestAuthHandler` (+`AddHeaderTestAuthentication`/`WithTestUser`), `Eventually.AssertAsync`,
+  `RawJsonKafkaProducer`. Резолв топика вынесен в `Koto.Application.IntegrationEventTopics` —
+  одна конвенция для публикации, подписки и тестов.
+
+- **v0.3.0-preview.14** — **дефолтная retry-политика консюмеров в `UseKotoKafka`**: без неё Wolverine
+  уводил сообщение в dead letter после первого исключения — паттерн «throw для ретрая при гонке
+  топиков» молча терял события. Теперь: inline-повторы 200мс/1с/3с → отложенные 10с/30с/60с
+  (durable при inbox) → dead letter; специфичные политики сервиса имеют приоритет.
+
 - **v0.3.0-preview.13** — **schema-прозрачная шина**: `PublishIntegrationEvents` публикует чистый JSON
   (web-casing, без Wolverine-заголовков) — топики читаются любым инструментом/стеком; новый
   `ListenToIntegrationEvent<T>()` — подписка по конвенции (`T.Topic` + `ReceiveRawJson<T>` + inline).

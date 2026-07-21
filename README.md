@@ -103,18 +103,19 @@ Order.Cancel()
 | [`Koto.Api.FastEndpoints`](https://www.nuget.org/packages/Koto.Api.FastEndpoints) | Command and query endpoints, Problem Details, correlation ID |
 | [`Koto.Observability`](https://www.nuget.org/packages/Koto.Observability) | One-line Serilog + OpenTelemetry setup |
 | [`Koto.Scheduling`](https://www.nuget.org/packages/Koto.Scheduling) | Quartz.NET-based scheduled jobs and batch processing |
-| [`Koto.Testing`](https://www.nuget.org/packages/Koto.Testing) | Aggregate test fixture, fake repository, integration test base |
+| [`Koto.Testing`](https://www.nuget.org/packages/Koto.Testing) | Aggregate test fixture, fake repository, `Result<T>` assertions |
+| [`Koto.Testing.Integration`](https://www.nuget.org/packages/Koto.Testing.Integration) | Header test auth for WebApplicationFactory, `Eventually` assertions, raw-JSON Kafka test producer |
 
 ---
 
 ## Getting started
 
-Packages are published to [nuget.org](https://www.nuget.org/profiles/arigatory) as pre-releases:
+Packages are published to [nuget.org](https://www.nuget.org/profiles/arigatory); stable since v0.4.0:
 
 ```bash
-dotnet add package Koto.Domain --prerelease
-dotnet add package Koto.Application --prerelease
-dotnet add package Koto.Infrastructure.EFCore --prerelease
+dotnet add package Koto.Domain
+dotnet add package Koto.Application
+dotnet add package Koto.Infrastructure.EFCore
 ```
 
 ### Scaffold a service by hand
