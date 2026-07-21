@@ -12,6 +12,7 @@
     <Project Path="src/Koto.Observability/Koto.Observability.csproj" />
     <Project Path="src/Koto.Scheduling/Koto.Scheduling.csproj" />
     <Project Path="src/Koto.Testing/Koto.Testing.csproj" />
+    <Project Path="src/Koto.Testing.Integration/Koto.Testing.Integration.csproj" />
     <Project Path="src/Koto.Validation/Koto.Validation.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -26,6 +27,7 @@
     <Project Path="tests/Koto.Messaging.Wolverine.Tests/Koto.Messaging.Wolverine.Tests.csproj" />
     <Project Path="tests/Koto.Observability.Tests/Koto.Observability.Tests.csproj" />
     <Project Path="tests/Koto.Scheduling.Tests/Koto.Scheduling.Tests.csproj" />
+    <Project Path="tests/Koto.Testing.Integration.Tests/Koto.Testing.Integration.Tests.csproj" />
     <Project Path="tests/Koto.Testing.Tests/Koto.Testing.Tests.csproj" />
     <Project Path="tests/Koto.Validation.Tests/Koto.Validation.Tests.csproj" />
   </Folder>

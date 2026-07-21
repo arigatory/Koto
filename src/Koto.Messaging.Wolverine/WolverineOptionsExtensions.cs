@@ -22,15 +22,7 @@ public static class WolverineOptionsExtensions
     public static WolverineOptions ListenToIntegrationEvent<T>(this WolverineOptions options)
         where T : IIntegrationEvent
     {
-        var topicField = typeof(T).GetField(
-            "Topic", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-        if (topicField?.GetRawConstantValue() is not string topic || string.IsNullOrWhiteSpace(topic))
-        {
-            throw new InvalidOperationException(
-                $"Integration event '{typeof(T).FullName}' must declare 'public const string Topic'");
-        }
-
-        options.ListenToKafkaTopic(topic)
+        options.ListenToKafkaTopic(IntegrationEventTopics.For<T>())
             .ReceiveRawJson<T>(ContractJson)
             .ProcessInline();
         return options;
@@ -115,14 +107,7 @@ public static class WolverineOptionsExtensions
                 if (eventType.IsAbstract || !typeof(IIntegrationEvent).IsAssignableFrom(eventType))
                     continue;
 
-                var topicField = eventType.GetField(
-                    "Topic", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-                if (topicField?.GetRawConstantValue() is not string topic || string.IsNullOrWhiteSpace(topic))
-                {
-                    throw new InvalidOperationException(
-                        $"Integration event '{eventType.FullName}' must declare " +
-                        "'public const string Topic = \"service.event-name\";' to use convention routing");
-                }
+                var topic = IntegrationEventTopics.For(eventType);
 
                 // Startup-only reflection (конвенция «no reflection on hot paths» не нарушена).
                 var expression = publishMethod.MakeGenericMethod(eventType).Invoke(options, null)!;

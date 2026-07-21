@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Koto.Testing.Integration</PackageId>
+    <Description>Integration-test building blocks for Koto microservices: header-based test authentication for WebApplicationFactory hosts, Eventually assertions for async projections/consumers, and a raw-JSON Kafka producer that publishes integration events by the Topic-constant convention.</Description>
+    <PackageTags>testing;integration;kafka;authentication;webapplicationfactory;microservices;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="2.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
+  </ItemGroup>
+
+</Project>
