@@ -7,6 +7,11 @@
 
 ## История релизов
 
+- **v0.3.0-preview.9** — s2s-аутентификация для HTTP ACL (закрывает последний запланированный
+  пробел RBG фазы 3): клиент — `AddServiceHttpClient(..., o => o.ApiKey = key)` добавляет
+  `X-Service-Key` к каждому запросу (`Koto.Infrastructure.Http`); сервер — схема `ServiceKey`
+  (`AddAuthentication().AddServiceKey(key)`, `Koto.Api.AspNetCore`), constant-time сравнение,
+  principal с ролью `Service` → `Roles("Service")` на внутренних эндпоинтах.
 - **v0.3.0-preview.8** — «perfection pass» по итогам RBG фаз 0–2, четыре DX-улучшения + один enabler:
   1. **Авто-конвертация StronglyTypedId** (ADR-023): `KotoDbContext` сам регистрирует pre-convention
      конвертеры для всех id-типов из сборок сущностей — ручные `Properties<XId>().HaveConversion<…>()`

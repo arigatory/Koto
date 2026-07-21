@@ -69,3 +69,15 @@ Standard resilience pipeline is applied automatically (3 retries with exponentia
 | 5xx | `general.unexpected` |
 
 Override `MapErrorResponse` to add service-specific error codes.
+
+## Service-to-service auth
+
+```csharp
+// вызывающая сторона
+services.AddServiceHttpClient<IWalletService, WalletClient>(
+    "wallet", "http://wallet", o => o.ApiKey = configuration["ServiceAuth:Key"]!);
+
+// принимающая сторона (Koto.Api.AspNetCore)
+services.AddAuthentication().AddServiceKey(configuration["ServiceAuth:Key"]!);
+// внутренний эндпоинт: Roles("Service")
+```
