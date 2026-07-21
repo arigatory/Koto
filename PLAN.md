@@ -7,6 +7,10 @@
 
 ## История релизов
 
+- **v0.3.0-preview.7** — пагинация: `PagedList<T>` в `Koto.Application` (Items/Page/PageSize/TotalCount,
+  TotalPages/HasNext/HasPrevious, `Map`, `Empty`) + `IQueryable<T>.ToPagedListAsync(page, pageSize)`
+  в `Koto.Infrastructure.EFCore` (COUNT + Skip/Take; требует упорядоченного запроса).
+  Возвращайте из query-хендлеров: `IQuery<PagedList<OrderDto>>`.
 - **v0.3.0-preview.6** — **фикс потери доменных событий вне Wolverine-хендлеров** (ADR-022):
   `PublishDomainEventsFromEntityFrameworkCore` — codegen-политика, работающая только внутри хендлеров;
   события из обычных HTTP-флоу молча терялись. Новый `EfCoreUnitOfWork<TContext>` в

@@ -111,3 +111,14 @@ public class ActiveOrdersSpec : Specification<Order>
 var query = SpecificationEvaluator.GetQuery(_context.Set<Order>(), new ActiveOrdersSpec(customerId));
 var orders = await query.ToListAsync(ct);
 ```
+
+## Pagination
+
+```csharp
+var page = await context.Orders
+    .Where(o => o.CustomerId == customerId)
+    .OrderByDescending(o => o.CreatedAt)
+    .ToPagedListAsync(page: 1, pageSize: 20, ct);
+```
+
+Запрос должен быть упорядочен — иначе порядок страниц не определён.

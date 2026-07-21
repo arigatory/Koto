@@ -85,3 +85,7 @@ builder.Services.AddKotoApplication(
 - `IDomainEvent` — internal; free to change; never crosses service boundaries.
 - `IIntegrationEvent` — external contract; versioned; published to Kafka via Wolverine.
 - `IIntegrationCommand` — fire-and-forget command to another service; `IIntegrationCommand<TResult>` expects a reply.
+
+## Pagination
+
+`PagedList<T>` — страница результата с метаданными (`TotalCount`, `TotalPages`, `HasNextPage`). Возвращайте из query-хендлеров: `IQuery<PagedList<OrderDto>>`; материализация из EF Core — `ToPagedListAsync` в `Koto.Infrastructure.EFCore`.
