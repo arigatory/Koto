@@ -1,0 +1,30 @@
+src/Koto.Api.AspNetCore/Results/ResultActionResultExtensions.cs
+  s_1df5dd62b768e4::t_8910695a37f2ec 13,19,21-22
+src/Koto.Api.AspNetCore/Results/ResultHttpResultExtensions.cs
+  s_1df5dd62b768e4::t_8910695a37f2ec 14-18,23-26
+tests/Koto.Application.Tests/EnvelopeTests.cs
+  s_1df5dd62b768e4::t_6146df93054460 2,57,59,61-74,88
+src/Koto.Api.FastEndpoints/Endpoints/EndpointResultExtensions.cs
+  s_1df5dd62b768e4::t_8910695a37f2ec 25,30-35
+tests/Koto.Api.AspNetCore.Tests/ResultMappingTests.cs
+  s_1df5dd62b768e4::t_6146df93054460 60-61,75,85,128
+src/Koto.Application/Envelope/Envelope.cs
+  s_1df5dd62b768e4::t_8910695a37f2ec 7-10,12,14,31-32,34-36,39-40,42,44-49,55,63,66-72
+  s_1df5dd62b768e4::t_652fb91fbe85b0 73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ac21329a3f3642fa0415310e38dc32f037c5d6d3",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
