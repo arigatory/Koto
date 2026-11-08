@@ -1,0 +1,33 @@
+src/Koto.Validation/ValidationRuleFailed.cs
+  s_1df5dd62b768e4::t_14be46a8f45d41 1-22
+tests/Koto.Validation.Tests/ValidationBehaviorTests.cs
+  s_1df5dd62b768e4::t_c4e7ad980c4eb2 14-22,27-28,31,34,41-42,47,54-55,60,67-68,75-76,90-129,139,149,157,168-170,185,200,209,219,232,236,247-251,254-255,257-258,260-268
+src/Koto.Validation/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_14be46a8f45d41 12-15,21-27
+src/Koto.Validation/KotoValidators.cs
+  s_1df5dd62b768e4::t_14be46a8f45d41 8-11,16,36-37,48,50
+src/Koto.Validation/KotoApplicationOptionsExtensions.cs
+  s_1df5dd62b768e4::t_14be46a8f45d41 1-18
+src/Koto.Validation/ValidationBehavior.cs
+  s_1df5dd62b768e4::t_14be46a8f45d41 9-14,17,20,35-42,47-56
+tests/Koto.Validation.Tests/KotoValidatorsTests.cs
+  s_1df5dd62b768e4::t_c4e7ad980c4eb2 18-19,25-27,35,68,76,86-87,110,117,123
+tests/Koto.Validation.Tests/ServiceCollectionExtensionsTests.cs
+  s_1df5dd62b768e4::t_c4e7ad980c4eb2 1-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "79b887bb4e78fd2c98b1f2dee15ce08d40ed6acd",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
