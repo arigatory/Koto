@@ -16,7 +16,7 @@ public class ResultAssertionsTests
     [Fact]
     public void BeSuccess_fails_on_failed_result()
     {
-        var result = Result<int>.Failure(new Error("some.error", "msg"));
+        var result = Result<int>.Failure(new TestError("test.some.error", "msg"));
         var act = () => result.Should().BeSuccess();
         act.Should().Throw<Exception>();
     }
@@ -24,7 +24,7 @@ public class ResultAssertionsTests
     [Fact]
     public void BeFailure_passes_on_failed_result()
     {
-        var result = Result<int>.Failure(new Error("some.error", "msg"));
+        var result = Result<int>.Failure(new TestError("test.some.error", "msg"));
         result.Should().BeFailure();
     }
 
@@ -39,15 +39,15 @@ public class ResultAssertionsTests
     [Fact]
     public void HaveErrors_passes_when_codes_match_in_order()
     {
-        var result = Result<int>.Failure([new Error("a.first", "1"), new Error("b.second", "2")]);
-        result.Should().HaveErrors("a.first", "b.second");
+        var result = Result<int>.Failure([new TestError("test.a.first", "1"), new TestError("test.b.second", "2")]);
+        result.Should().HaveErrors("test.a.first", "test.b.second");
     }
 
     [Fact]
     public void HaveErrors_fails_when_codes_differ()
     {
-        var result = Result<int>.Failure(new Error("a.first", "1"));
-        var act = () => result.Should().HaveErrors("b.other");
+        var result = Result<int>.Failure(new TestError("test.a.first", "1"));
+        var act = () => result.Should().HaveErrors("test.b.other");
         act.Should().Throw<Exception>();
     }
 
@@ -55,22 +55,22 @@ public class ResultAssertionsTests
     public void HaveErrors_fails_on_successful_result()
     {
         var result = Result<int>.Success(1);
-        var act = () => result.Should().HaveErrors("a.first");
+        var act = () => result.Should().HaveErrors("test.a.first");
         act.Should().Throw<Exception>();
     }
 
     [Fact]
     public void BeFailureWith_passes_when_error_code_matches()
     {
-        var result = Result<int>.Failure(new Error("orders.order.not-found", "Not found"));
+        var result = Result<int>.Failure(new TestError("orders.order.not-found", "Not found"));
         result.Should().BeFailureWith("orders.order.not-found");
     }
 
     [Fact]
     public void BeFailureWith_fails_when_error_code_differs()
     {
-        var result = Result<int>.Failure(new Error("orders.order.not-found", "Not found"));
-        var act = () => result.Should().BeFailureWith("different.code");
+        var result = Result<int>.Failure(new TestError("orders.order.not-found", "Not found"));
+        var act = () => result.Should().BeFailureWith("test.different.code");
         act.Should().Throw<Exception>();
     }
 
@@ -92,7 +92,7 @@ public class ResultAssertionsTests
     [Fact]
     public void HaveValue_fails_on_failed_result()
     {
-        var result = Result<string>.Failure(new Error("err", "msg"));
+        var result = Result<string>.Failure(new TestError("test.err.msg", "msg"));
         var act = () => result.Should().HaveValue("hello");
         act.Should().Throw<Exception>();
     }

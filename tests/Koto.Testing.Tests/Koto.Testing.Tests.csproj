@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Koto.Testing\Koto.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Koto.Validation\Koto.Validation.csproj" />
   </ItemGroup>
 
 </Project>
