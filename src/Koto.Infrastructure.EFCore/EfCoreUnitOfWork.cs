@@ -16,8 +16,9 @@ namespace Koto.Infrastructure.EFCore;
 /// plain HTTP endpoints, not only inside Wolverine message handlers.
 /// </para>
 /// <para>
-/// When Wolverine messaging is not registered (no <see cref="IDbContextOutbox"/> in DI) or the
-/// aggregates raised no events, commit degrades to a plain <c>SaveChangesAsync</c>.
+/// Without domain events the commit is a plain <c>SaveChangesAsync</c>. If aggregates raised events
+/// and no <see cref="IDbContextOutbox"/> is registered, <see cref="CommitAsync"/> throws instead of
+/// losing them silently.
 /// </para>
 /// </summary>
 /// <typeparam name="TContext">The service's <see cref="KotoDbContext"/>.</typeparam>
@@ -50,14 +51,19 @@ public class EfCoreUnitOfWork<TContext> : IUnitOfWork
             .SelectMany(e => e.Entity.DomainEvents)
             .ToList();
 
-        var outbox = domainEvents.Count > 0 ? _services.GetService<IDbContextOutbox>() : null;
-
-        if (outbox is null)
+        if (domainEvents.Count == 0)
         {
             await _context.SaveChangesAsync(ct).ConfigureAwait(false);
             await CommitTransactionIfAnyAsync(ct).ConfigureAwait(false);
             return;
         }
+
+        var outbox = _services.GetService<IDbContextOutbox>()
+            ?? throw new InvalidOperationException(
+                $"{domainEvents.Count} domain event(s) ({string.Join(", ", domainEvents.Select(e => e.GetType().Name).Distinct())}) " +
+                "were raised by tracked aggregates, but no Wolverine outbox (IDbContextOutbox) is registered, so they would be lost. " +
+                "Configure Wolverine with the EF Core outbox (UseWolverine + UseKotoDurableOutbox / AddKotoEFCore) " +
+                "or register your own IUnitOfWork that dispatches domain events.");
 
         outbox.Enroll(_context);
         foreach (var domainEvent in domainEvents)

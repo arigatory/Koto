@@ -1,6 +1,6 @@
 # Koto.Infrastructure.EFCore
 
-EF Core 10 integration for the [Koto](https://github.com/arigatory/Koto) DDD suite: generic repository, strongly-typed ID converters, specification pattern, and Wolverine outbox wiring.
+EF Core 10 integration for the [Koto](https://github.com/arigatory/Koto) DDD suite: generic repository, strongly-typed ID converters, pagination, and Wolverine outbox wiring.
 
 ## Install
 
@@ -17,8 +17,6 @@ dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL  # or your preferred pr
 | `Repository<TAgg, TId>` | Generic `IRepository` implementation backed by EF Core |
 | `StronglyTypedIdValueConverter<TId, TRaw>` | EF Core `ValueConverter` for `StronglyTypedId<T>` properties |
 | `StronglyTypedIdConvention` | Auto-applies converters to all strongly-typed ID properties |
-| `ISpecification<T>` / `Specification<T>` | Encapsulates query criteria, includes, and ordering |
-| `SpecificationEvaluator` | Applies a specification to an `IQueryable<T>` |
 | `AddKotoEFCore<TContext>()` | Registers the DbContext via Wolverine's EF Core integration |
 
 ## Usage
@@ -93,24 +91,6 @@ public class OrderRepository : Repository<Order, OrderId>
 ```
 
 Or rely on the registered `IRepository<Order, OrderId>` directly.
-
-### 4 — Specifications
-
-```csharp
-public class ActiveOrdersSpec : Specification<Order>
-{
-    public ActiveOrdersSpec(CustomerId customerId)
-    {
-        AddCriteria(o => o.CustomerId == customerId && !o.IsCancelled);
-        AddInclude(o => o.Items);
-        ApplyOrderBy(o => o.PlacedAt);
-    }
-}
-
-// In a repository or query handler:
-var query = SpecificationEvaluator.GetQuery(_context.Set<Order>(), new ActiveOrdersSpec(customerId));
-var orders = await query.ToListAsync(ct);
-```
 
 ## Pagination
 
