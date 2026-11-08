@@ -35,7 +35,8 @@ public static class ErrorCatalog
     /// <summary>
     /// Fails with one <see cref="InvalidOperationException"/> listing every problem: a record whose
     /// constructor throws, a code that does not match <see cref="ErrorCode.Pattern"/>, or a code shared
-    /// by several record types.
+    /// by several record types. Typed enrichments (records deriving from <see cref="EnrichedError"/>) report
+    /// their cause's code by design and are not counted as duplicates.
     /// </summary>
     public static void ShouldBeValid(params Assembly[] assemblies)
     {
@@ -58,6 +59,11 @@ public static class ErrorCatalog
 
             if (!ErrorCode.IsValid(instance.Code))
                 problems.Add($"{type.FullName}: code '{instance.Code}' does not match {ErrorCode.Pattern}");
+
+            // A typed enrichment (record deriving from EnrichedError) reports its cause's code by design:
+            // it is a fuller version of that error, not a second definition of the code.
+            if (typeof(EnrichedError).IsAssignableFrom(type))
+                continue;
 
             if (!byCode.TryGetValue(instance.Code, out var types))
                 byCode[instance.Code] = types = [];

@@ -111,7 +111,10 @@ public sealed class AppResultAssertions<T> : ReferenceTypeAssertions<AppResult<T
         return new AndConstraint<AppResultAssertions<T>>(this);
     }
 
-    /// <summary>Asserts that the result is a failure with at least one error bound to <paramref name="field"/>.</summary>
+    /// <summary>
+    /// Asserts that the result is a failure with at least one error bound to <paramref name="field"/>.
+    /// The comparison ignores case, so the wire name (<c>"email"</c>) and <c>nameof(cmd.Email)</c> both match.
+    /// </summary>
     public AndConstraint<AppResultAssertions<T>> HaveErrorForField(string field, string because = "", params object[] becauseArgs)
     {
         CurrentAssertionChain
@@ -119,7 +122,7 @@ public sealed class AppResultAssertions<T> : ReferenceTypeAssertions<AppResult<T
             .ForCondition(Subject.IsFailure)
             .FailWith("Expected result to have an error for field {0}{reason}, but it succeeded.", field)
             .Then
-            .ForCondition(Subject.IsFailure && Subject.Errors.Any(e => e.Field == field))
+            .ForCondition(Subject.IsFailure && Subject.Errors.Any(e => string.Equals(e.Field, field, StringComparison.OrdinalIgnoreCase)))
             .FailWith("Expected result to have an error for field {0}{reason}, but found fields {1}.",
                 field, Subject.Errors.Select(e => e.Field ?? "(none)").ToArray());
 

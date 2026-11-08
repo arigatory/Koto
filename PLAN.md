@@ -48,7 +48,9 @@
   11. **`Koto.Infrastructure.EFCore`:** `EfCoreUnitOfWork.CommitAsync` бросает, если агрегаты подняли события,
       а outbox не зарегистрирован (раньше терял молча). `ISpecification`/`Specification`/`SpecificationEvaluator`
       удалены. `AddKotoEFCore` регистрирует `KotoDbContext` → `IRepository<,>` из DI наконец резолвится.
-  12. **`Koto.Testing`:** `Should()` для `AppResult<T>` (+ `HaveErrorForField`), `ErrorCatalog.Scan/ShouldBeValid`.
+  12. **`Koto.Testing`:** `Should()` для `AppResult<T>` (+ `HaveErrorForField`, регистронезависимый — совпадает и `nameof`, и имя
+      на проводе), `ErrorCatalog.Scan/ShouldBeValid` (типизированные обогащения `: EnrichedError(Cause)` делят код причины
+      и дубликатом не считаются).
   13. Удалены: `IDomainService`, `IResultFactory`, `TapError`, `Specification*`, `MustBeEntity`,
       `NotEmptyWithKotoError`, `LengthWithKotoError`, `KotoProblemDetails`, `KotoHttpErrorOptions`.
   14. `AppResult<T>` намеренно без `Bind`/`Tap`/`Ensure`/`TapErrors` — цепочки строятся на доменном `Result<T>`,

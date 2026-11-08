@@ -57,6 +57,17 @@ public class ErrorCatalogTests
     }
 
     [Fact]
+    public void ShouldBeValid_does_not_count_typed_enrichments_as_duplicate_codes()
+    {
+        // Full and FullWithAlternative share "test.catalog.full" by design: the wrapper is a fuller
+        // version of its cause, not a second definition of the code.
+        var act = () => ErrorCatalog.ShouldBeValid(typeof(ErrorCatalogTests).Assembly);
+
+        act.Should().Throw<InvalidOperationException>()
+            .Which.Message.Should().NotContain("test.catalog.full");
+    }
+
+    [Fact]
     public void Scan_gives_dynamic_code_records_a_valid_stub_code()
     {
         var entries = ErrorCatalog.Scan(typeof(ErrorCatalogTests).Assembly);

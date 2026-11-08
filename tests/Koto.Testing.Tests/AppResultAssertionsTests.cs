@@ -43,6 +43,13 @@ public class AppResultAssertionsTests
     }
 
     [Fact]
+    public void HaveErrorForField_matches_the_wire_name_regardless_of_case()
+    {
+        // Handlers bind with nameof(cmd.Email) → "Email"; the envelope sends "email". Both spellings must match.
+        AppResult<int>.Failure(EmailRequired).Should().HaveErrorForField("email");
+    }
+
+    [Fact]
     public void HaveErrorForField_fails_when_no_error_is_bound_to_the_field()
     {
         var act = () => AppResult<int>.Failure(NotFound).Should().HaveErrorForField("Email");

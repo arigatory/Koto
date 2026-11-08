@@ -10,8 +10,8 @@ DDD-specific test helpers for Koto microservices.
 | `AggregateAssertions<TAgg>` | Domain event assertions |
 | `FakeRepository<TAgg, TId>` | In-memory `IRepository<TAgg,TId>` |
 | `FakeIntegrationEventPublisher` | Captures published `IIntegrationEvent`s |
-| `ResultAssertions<T>` / `AppResultAssertions<T>` | `.Should().BeSuccess()`, `.BeFailure()`, `.BeFailureWith("code")`, `.HaveErrors("code1", "code2")`, `.HaveValue(x)`; application results also `.HaveErrorForField("email")` |
-| `ErrorCatalog` | `Scan(assemblies)` lists every error record with its code and detail keys; `ShouldBeValid(assemblies)` fails on malformed or duplicate codes |
+| `ResultAssertions<T>` / `AppResultAssertions<T>` | `.Should().BeSuccess()`, `.BeFailure()`, `.BeFailureWith("code")`, `.HaveErrors("code1", "code2")`, `.HaveValue(x)`; application results also `.HaveErrorForField("email")` (case-insensitive: the wire name and `nameof(cmd.Email)` both match) |
+| `ErrorCatalog` | `Scan(assemblies)` lists every error record with its code and detail keys; `ShouldBeValid(assemblies)` fails on malformed or duplicate codes (typed enrichments deriving from `EnrichedError` share their cause's code and are not duplicates) |
 
 ## Aggregate unit tests
 
