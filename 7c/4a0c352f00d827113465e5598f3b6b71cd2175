@@ -1,0 +1,71 @@
+tests/Koto.Api.FastEndpoints.Tests/EnvelopeEndpointTests.cs
+  s_1df5dd62b768e4::t_b5ab47cba1ee0d 1-8,10-20,22-36,38-62,64-70,72-79,81-82,84-89,91,94-109,111,114-127,131-142,145-152,155-162,165-174
+  s_1df5dd62b768e4::t_f95ae49470f2cc 9,21,37,90,110,128,154
+  s_1df5dd62b768e4::t_a4b8a119cf0036 71
+  s_1df5dd62b768e4::t_23e0dc5ccd114d 80
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 63,83,92-93,112-113,129-130,143-144,163-164
+  s_1df5dd62b768e4::t_727333ba3e96aa 153
+src/Koto.Api.FastEndpoints/Endpoints/MappedCommandEndpoint.cs
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 15
+  s_1df5dd62b768e4::t_e6b161f25fc4b8 11,32
+  s_1df5dd62b768e4::t_4dbc9528323dbd 2,16,18,25,36,38,45
+src/Koto.Api.FastEndpoints/Endpoints/CommandEndpoint.cs
+  s_1df5dd62b768e4::t_e6b161f25fc4b8 8,22
+  s_1df5dd62b768e4::t_4dbc9528323dbd 2,13-14,18,29-30,34
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 7,9-10,23-25,28
+src/Koto.Api.FastEndpoints/Endpoints/EndpointResultExtensions.cs
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 4,10-12,16-17,20-22,25-26,29-31
+src/Koto.Api.FastEndpoints/Endpoints/MappedQueryEndpoint.cs
+  s_1df5dd62b768e4::t_e6b161f25fc4b8 11
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 15
+  s_1df5dd62b768e4::t_4dbc9528323dbd 2,16,18,25
+tests/Koto.Application.Tests/EnvelopeTests.cs
+  s_1df5dd62b768e4::t_727333ba3e96aa 96-104
+src/Koto.Api.FastEndpoints/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_3593a9c7e321fe 4,6,31,36-37,42
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 14-16,19-20,23,26
+tests/Koto.Api.FastEndpoints.Tests/Koto.Api.FastEndpoints.Tests.csproj
+  s_1df5dd62b768e4::t_b5ab47cba1ee0d 17
+src/Koto.Api.FastEndpoints/Koto.Api.FastEndpoints.csproj
+  s_1df5dd62b768e4::t_b5ab47cba1ee0d 6-7,26
+src/Koto.Api.FastEndpoints/Middleware/GlobalExceptionHandler.cs
+  s_1df5dd62b768e4::t_3593a9c7e321fe 5,7,23-37
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 1-2,12-14,46,48-51,53-54
+  s_1df5dd62b768e4::t_abfd48595db58c 38
+src/Koto.Api.FastEndpoints/KotoFastEndpointsConfig.cs
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 1-9,11-24,39-82
+  s_1df5dd62b768e4::t_23e0dc5ccd114d 10,25-38
+src/Koto.Api.AspNetCore/Results/ResultActionResultExtensions.cs
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 22,34
+tests/Koto.Api.FastEndpoints.Tests/KotoFastEndpointsConfigTests.cs
+  s_1df5dd62b768e4::t_a5052eed9cd5ca 14-15,17,19,21
+  s_1df5dd62b768e4::t_b5ab47cba1ee0d 1-13,16,18,20,22-50
+src/Koto.Api.FastEndpoints/Endpoints/QueryEndpoint.cs
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 8-10,13
+  s_1df5dd62b768e4::t_4dbc9528323dbd 2,14-15,19
+  s_1df5dd62b768e4::t_e6b161f25fc4b8 7
+src/Koto.Application/Envelope/EnvelopeError.cs
+  s_1df5dd62b768e4::t_727333ba3e96aa 1-2,5-9,24-39
+tests/Koto.Api.FastEndpoints.Tests/TestSupport.cs
+  s_1df5dd62b768e4::t_b5ab47cba1ee0d 1-14
+tests/Koto.Api.FastEndpoints.Tests/GlobalExceptionHandlerTests.cs
+  s_1df5dd62b768e4::t_b5ab47cba1ee0d 1-37
+src/Koto.Api.AspNetCore/Results/ResultHttpResultExtensions.cs
+  s_1df5dd62b768e4::t_6b0e5cbbbd6d73 20,29,50-54,56-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7c4a0c352f00d827113465e5598f3b6b71cd2175",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
