@@ -1,0 +1,51 @@
+tests/Koto.Application.Tests/HandlerValidationTests.cs
+  s_1df5dd62b768e4::t_9af92334f66829 67-77
+src/Koto.Infrastructure.Http/RemoteError.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 6-10,12-17,19,25-26,28,31-32
+tests/Koto.Infrastructure.Http.Tests/ServiceHttpClientTests.cs
+  s_1df5dd62b768e4::t_9af92334f66829 6,102-138
+  s_1df5dd62b768e4::t_b18c3cb75f16de 139
+src/Koto.Validation/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 5,16-17,25
+src/Koto.Application/Errors/ErrorDetails.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 10-14,25,29,31-33,36,55,68,70-74
+tests/Koto.Application.Tests/ErrorDetailsTests.cs
+  s_1df5dd62b768e4::t_9af92334f66829 13-18,78-96
+src/Koto.Application/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 3,90,95-96,98
+src/Koto.Domain/Results/ErrorList.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 37-39
+tests/Koto.Api.AspNetCore.Tests/EnrichmentGuardTests.cs
+  s_1df5dd62b768e4::t_9af92334f66829 16,109-117
+  s_1df5dd62b768e4::t_b33e86bb501c1c 118-120
+src/Koto.Api.AspNetCore/EnrichmentGuard.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 18-23,27,43,59-60,63,66-67,74,85,87,99-102
+src/Koto.Infrastructure.Http/HttpErrors.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 22-24
+tests/Koto.Api.AspNetCore.Tests/KotoApiOptionsTests.cs
+  s_1df5dd62b768e4::t_9af92334f66829 69-70,73
+tests/Koto.Validation.Tests/ServiceCollectionExtensionsTests.cs
+  s_1df5dd62b768e4::t_9af92334f66829 83-94
+src/Koto.Application/Results/AppResult.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 78-80
+src/Koto.Domain/Results/Result.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 77-79
+src/Koto.Infrastructure.Http/ServiceHttpClient.cs
+  s_1df5dd62b768e4::t_567393d6bc41a1 41,43-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "95d9eb606020dd7afa83cbf9776a270be7f4eb02",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
