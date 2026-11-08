@@ -106,3 +106,8 @@ await unitOfWork.CommitAsync(ct);   // MartenUnitOfWork, регистрируе�
 
 `SaveAsync` остаётся одноагрегатным шорткатом (Append + commit). Uncommitted events агрегатов
 очищаются только после успешного коммита; `RollbackAsync` отбрасывает всё застейдженное.
+
+## Upgrading from 0.4
+
+0.5 moves Marten from 8.37 to 9.58 — a major version of Marten. The package API is unchanged, but re-check your projections against the Marten 9 release notes. The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).

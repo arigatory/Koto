@@ -107,3 +107,8 @@ var page = await context.Orders
 ```
 
 The query must be ordered (`OrderBy`), otherwise page boundaries are undefined.
+
+## Upgrading from 0.4
+
+0.5 makes `EfCoreUnitOfWork.CommitAsync` throw when aggregates raised domain events and no Wolverine outbox is registered (0.4 dropped them silently), and removes `ISpecification<T>` / `Specification<T>` / `SpecificationEvaluator`. The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).

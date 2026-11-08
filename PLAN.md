@@ -10,7 +10,8 @@
 - **v0.5.0-preview.1** — **новая модель ошибок и конверт ответа** ([ADR-026](adr/ADR-026-error-model-and-envelope.md),
   спека [docs/packages/16](docs/packages/16-error-model-envelope.md)). Цель: отказ едет как значение от агрегата
   до клиента по одному рельсу, все ошибки доходят, у каждой есть типизированные `details`, формат ответа один на
-  HTTP/SignalR/Kafka. **Breaking changes / migration notes:**
+  HTTP/SignalR/Kafka. Пошаговое руководство для потребителей (англ., код до/после):
+  [docs/migrations/0.4-to-0.5.md](docs/migrations/0.4-to-0.5.md). **Breaking changes / migration notes:**
   1. **`Error` абстрактный.** Каждый `new Error("code", "msg")` → record в каталоге:
      `public sealed record OtpExpired(DateTimeOffset At) : Error("identity.otp.expired", "…");` — свойства record
      это гарантированные данные (`details`). Коды — не меньше трёх kebab-case сегментов, валидируются при создании;

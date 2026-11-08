@@ -12,6 +12,7 @@
     <RepositoryUrl>https://github.com/arigatory/Koto</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>ddd;cqrs;domain;microservices;dotnet</PackageTags>
+    <PackageReleaseNotes>0.5.0-preview.1 — new error model: abstract Error catalog, AppResult for handlers, one Envelope response for every transport (ADR-026). Breaking for 0.4 consumers; migration guide: https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md</PackageReleaseNotes>
 
     <!-- XML docs for IntelliSense -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

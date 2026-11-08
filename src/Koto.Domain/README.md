@@ -136,6 +136,11 @@ return result.Match(
     onFailure: errors => Problem(errors[0].Message, errors.Count));
 ```
 
+## Upgrading from 0.4
+
+0.5 makes `Error` abstract — every error is a record in a catalog — and renames `Result<T>.Error` to `FirstError`; `Errors` is an `ErrorList<Error>`, `TapError`, `IDomainService` and `IResultFactory` are gone, the `Errors.General` codes changed. The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).
+
 ## License
 
 MIT

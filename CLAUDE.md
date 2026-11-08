@@ -7,6 +7,8 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Все **14 пакетов** опубликованы на nuget.org (профиль `arigatory`); стабильная `0.4.0`, в работе `0.5.0-preview.1`
   (новая модель ошибок и конверт ответа — ADR-026, `docs/packages/16-error-model-envelope.md`).
 - Релиз: bump `<Version>` в `src/Directory.Build.props` → тег `vX.Y.Z` → push → CI `publish.yml` пакует (версия из тега) и пушит все пакеты на nuget.org.
+- Breaking changes: руководство для потребителей `docs/migrations/<from>-to-<to>.md` (англ., код до/после), на него ссылаются
+  README затронутых пакетов («Upgrading from …») и `PackageReleaseNotes` в `src/Directory.Build.props`; `PLAN.md` — русская история релизов.
 - Шаблоны (`Koto.Templates`, Phase 5) — НЕ начаты; новые сервисы скаффолдятся вручную.
 - Детальный индекс фаз: `PLAN.md`
 - Планы пакетов: `docs/packages/`

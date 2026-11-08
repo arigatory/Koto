@@ -18,7 +18,7 @@ metadata:
 
 Koto is a suite of 14 NuGet packages (MIT, `net10.0`) by arigatory: DDD primitives, CQRS, Result-based error flow, EF Core/Marten persistence, Wolverine/Kafka messaging, FastEndpoints + ASP.NET Core API layers.
 
-**Version line: 0.5.0-preview.1.** Install with `--prerelease` (`dotnet add package Koto.Domain --prerelease`) and keep every Koto package on the same version. 0.5 replaced the error model of the stable 0.4.0 line: abstract `Error` catalog, `AppResult<T>` for handlers, one `Envelope<T>` response for every transport (ADR-026). This skill describes **0.5** and marks where 0.4 differed. Pre-1.0: minor bumps carry breaking changes — read the migration notes in `PLAN.md` of the Koto repo before upgrading.
+**Version line: 0.5.0-preview.1.** Install with `--prerelease` (`dotnet add package Koto.Domain --prerelease`) and keep every Koto package on the same version. 0.5 replaced the error model of the stable 0.4.0 line: abstract `Error` catalog, `AppResult<T>` for handlers, one `Envelope<T>` response for every transport (ADR-026). This skill describes **0.5** and marks where 0.4 differed. Pre-1.0: minor bumps carry breaking changes — read the guide in `docs/migrations/` of the Koto repo before upgrading (`0.4-to-0.5.md` for this line).
 
 Sources of truth, in priority order:
 1. Per-package READMEs — the text of each nuget.org package page; in the repo at `src/<Package>/README.md` (github.com/arigatory/Koto; a local checkout works the same).

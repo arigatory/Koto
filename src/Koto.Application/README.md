@@ -146,3 +146,8 @@ implementing `IPipelineBehavior<PlaceOrderCommand, AppResult<OrderId>>`.
 `PagedList<T>` carries `Items`, `Page`, `PageSize`, `TotalCount`, `TotalPages`, `HasNextPage`,
 `HasPreviousPage`. Return it from query handlers (`IQuery<PagedList<OrderDto>>`); materialize from
 EF Core with `ToPagedListAsync` in `Koto.Infrastructure.EFCore`.
+
+## Upgrading from 0.4
+
+0.5 changes the handler contract: handlers and `ICqrsDispatcher` return `AppResult<T>`, a domain `Result<T>` leaves a handler through `ForField` / `Enrich()` / `Enrich(map)`, `Error.Field` moved to `EnrichedError`, and `AddKotoApplication` fails at startup when a command has no handler. The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).

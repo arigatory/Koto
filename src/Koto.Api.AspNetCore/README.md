@@ -98,3 +98,8 @@ error of type `X` — `MeetupFullWithAlternative(MeetupFull Cause, Guid Alternat
 | anything else, including hosts without `IHostEnvironment` | log a warning, send the response as is |
 
 Override with `o.EnrichmentGuard = EnrichmentGuardMode.Off / Warn / Throw`.
+
+## Upgrading from 0.4
+
+0.5 replaces Problem Details with the `Envelope<T>` (void commands answer 200, not 204), renames `KotoHttpErrorOptions` to `KotoApiOptions` (`MapSuffix` / `MapPrefix` → `Map(rule)`), accepts only `AppResult<T>` in `ToHttpResult` / `ToActionResult`, and deletes `KotoProblemDetails`. The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).

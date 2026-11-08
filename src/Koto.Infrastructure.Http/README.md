@@ -94,3 +94,8 @@ services.AddServiceHttpClient<IWalletService, WalletClient>(
 services.AddAuthentication().AddServiceKey(configuration["ServiceAuth:Key"]!);
 // internal endpoint: Roles("Service")
 ```
+
+## Upgrading from 0.4
+
+0.5 unwraps the Koto envelope of the remote service into `RemoteError`s that keep the remote code, and moves the fallback errors for non-envelope responses into `HttpErrors` with new codes (`general.conflict` → `general.resource.conflict`, …). The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).

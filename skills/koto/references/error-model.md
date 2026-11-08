@@ -173,7 +173,8 @@ appResult.Should().BeFailureWith("general.entity.not-found").And.HaveErrorForFie
 
 ## Migration 0.4 → 0.5 (consumer checklist)
 
-Full notes: `PLAN.md` in the Koto repo, entry v0.5.0-preview.1. Mechanical steps, in order:
+Full guide with before/after code for every change: `docs/migrations/0.4-to-0.5.md` in the Koto repo
+(https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md). The mechanical steps, in order:
 
 1. `new Error("code", "msg")` → one `sealed record` per error; `Errors.General.X(...)` → `new Errors.General.X(...)`; codes to ≥3 segments (`general.value.invalid-length`, `general.entity.not-found`, `general.collection.too-small` / `too-large`). Add the `ErrorCatalog.ShouldBeValid` test.
 2. `result.Error` → `result.FirstError` (display only); `return x.Error;` → `return x.Errors;`. `TapError` → `TapErrors`; `Match` receives the whole error list. `IResultFactory`, `IDomainService` are gone.

@@ -5,7 +5,7 @@ Repo: github.com/arigatory/Koto — the canonical source; work from a clone of i
 ## Release flow
 
 1. Ensure per-package READMEs are current (each `.csproj` packs its own `README.md` via `PackageReadmeFile` — what's in the file at tag time is what nuget.org shows forever for that version).
-2. Add breaking-change / migration notes to `PLAN.md` if the public API changed, and update the agent skill in `skills/koto/` (conventions, migration checklist, `koto-version` in its frontmatter).
+2. If the public API changed: write the consumer migration guide `docs/migrations/<from>-to-<to>.md` (English, before/after code for every change), list the changes in `PLAN.md` (release history, Russian), point `PackageReleaseNotes` in `src/Directory.Build.props` and an «Upgrading from …» section in each affected package README at the guide, and update the agent skill in `skills/koto/` (conventions, migration checklist, `koto-version` in its frontmatter).
 3. Bump `<Version>` in `src/Directory.Build.props` (e.g. `0.4.0`, or `0.5.0-preview.1` for a preview line) — keeps local builds consistent, though CI overrides it.
 4. Commit, then tag and push:
    ```bash
@@ -19,7 +19,7 @@ A published version cannot be unpublished (only unlisted) — tag and push only 
 
 ## Consumers
 
-Consumers reference via `<PackageReference Include="Koto.*" Version="X.Y.Z" />` (never ProjectReference across repos). After a release, bump versions in consumers only when they need the changes, following the `PLAN.md` migration notes.
+Consumers reference via `<PackageReference Include="Koto.*" Version="X.Y.Z" />` (never ProjectReference across repos). After a release, bump versions in consumers only when they need the changes, following the guide in `docs/migrations/`.
 
 ## Rules for changes to Koto itself
 

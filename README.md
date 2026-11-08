@@ -145,7 +145,8 @@ Order.Cancel()
 ## Getting started
 
 Packages are published to [nuget.org](https://www.nuget.org/profiles/arigatory). v0.5.0-preview.1 is the
-first preview of the new error model (see `PLAN.md` for migration notes from 0.4.x):
+first preview of the new error model and a **breaking release**: coming from 0.4.x, follow the
+[0.4 → 0.5 migration guide](docs/migrations/0.4-to-0.5.md) (every change with before/after code).
 
 ```bash
 dotnet add package Koto.Domain
@@ -218,6 +219,7 @@ has to be memorized.
 - Per-package guides: `src/<Package>/README.md` (also shown on each package's nuget.org page)
 - Architecture decision records: [`adr/`](adr/) — 26 ADRs covering Result, errors, the envelope, repositories, events, versioning
 - Design principles in depth: [`docs/principles/`](docs/principles/) — DDD, errors-and-results, architecture, naming
+- Migration guides: [`docs/migrations/`](docs/migrations/) — one per breaking release, starting with [0.4 → 0.5](docs/migrations/0.4-to-0.5.md)
 - Agent skill: [`skills/koto/`](skills/koto/) — conventions, wiring and the 0.4 → 0.5 migration checklist for coding agents
 
 ---

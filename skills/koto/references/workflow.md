@@ -23,7 +23,7 @@ Any decision someone might later ask "why?" about gets an ADR (pattern: `adr/ADR
 
 ## 3. Keep a plan index
 
-`PLAN.md` at repo root: phase index with status, plus **per-release breaking-change notes for consumers** (what to change when upgrading — see the v0.5.0-preview.1 entry for the level of detail expected).
+`PLAN.md` at repo root: phase index with status plus the per-release change list (Russian). Consumer-facing **migration guides** live in `docs/migrations/<from>-to-<to>.md` (English, before/after code — see `0.4-to-0.5.md` for the level of detail expected).
 
 ## 4. Implement test-first
 
@@ -33,7 +33,7 @@ Any decision someone might later ask "why?" about gets an ADR (pattern: `adr/ADR
 
 ## 5. Definition of done
 
-A change is done when **spec, ADRs, tests, the package README and the agent skill (`skills/koto/`) are all consistent** with the code — README and skill updates ship in the same change, not later. If the public API changed, add migration notes to `PLAN.md` and to the skill's migration checklist.
+A change is done when **spec, ADRs, tests, the package README and the agent skill (`skills/koto/`) are all consistent** with the code — README and skill updates ship in the same change, not later. If the public API changed, update the guide in `docs/migrations/`, the `PLAN.md` entry and the skill's migration checklist.
 
 ## 6. Release
 

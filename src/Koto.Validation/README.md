@@ -66,3 +66,8 @@ bound to its field:
 Nothing is collapsed into a string; the API layer renders every error inside the response envelope.
 
 Validators run one after another, so async rules may share scoped services such as a DbContext.
+
+## Upgrading from 0.4
+
+0.5 adds `AddValidationBehavior()` to position the behavior explicitly, removes `MustBeEntity`, `NotEmptyWithKotoError` and `LengthWithKotoError`, runs validators sequentially, and reports plain rules as `validation.rule.failed` (`details.rule`) instead of the FluentValidation error code. The step-by-step guide for the whole suite, with before/after code, is
+[docs/migrations/0.4-to-0.5.md](https://github.com/arigatory/Koto/blob/main/docs/migrations/0.4-to-0.5.md).
