@@ -1,62 +1,90 @@
-using Koto.Domain;
 using AwesomeAssertions;
+using Koto.Domain;
 
 namespace Koto.Domain.Tests;
 
 public class ErrorTests
 {
-    [Fact]
-    public void Field_is_optional_and_preserved_by_with_expression()
-    {
-        var error = new Error("general.not-found", "Item was not found.");
-        error.Field.Should().BeNull();
+    private sealed record BadCode() : Error("bad", "Bad code.");
 
-        var withField = error with { Field = "OrderId" };
-        withField.Field.Should().Be("OrderId");
-        withField.Code.Should().Be("general.not-found");
+    private sealed record OtpTooManyAttempts(int RetryAfterSeconds)
+        : Error("identity.otp.too-many-attempts", "Too many attempts.");
+
+    private sealed record OtherWithSameCode() : Error("test.error.same", "Same.");
+
+    private sealed record AnotherWithSameCode() : Error("test.error.same", "Same.");
+
+    [Fact]
+    public void Derived_record_carries_code_and_message()
+    {
+        var error = new Errors.General.NotFound("order", 7);
+
+        error.Code.Should().Be("general.entity.not-found");
+        error.Message.Should().Contain("order").And.Contain("7");
     }
 
     [Fact]
-    public void General_ValueIsRequired_has_correct_code()
+    public void Constructing_error_with_invalid_code_throws()
     {
-        Errors.General.ValueIsRequired().Code.Should().Be("general.value.is-required");
+        var act = () => new BadCode();
+
+        act.Should().Throw<ArgumentException>().WithMessage("*bad*");
     }
 
     [Fact]
-    public void General_NotFound_without_id()
+    public void Records_with_same_code_and_data_are_equal()
     {
-        var error = Errors.General.NotFound("Order");
-
-        error.Code.Should().Be("general.not-found");
-        error.Message.Should().Contain("Order");
+        new OtpTooManyAttempts(30).Should().Be(new OtpTooManyAttempts(30));
     }
 
     [Fact]
-    public void General_NotFound_with_id()
+    public void Records_with_different_data_are_not_equal()
     {
-        var id = Guid.NewGuid();
-        var error = Errors.General.NotFound("Order", id);
-
-        error.Message.Should().Contain(id.ToString());
+        new OtpTooManyAttempts(30).Should().NotBe(new OtpTooManyAttempts(60));
     }
 
     [Fact]
-    public void General_CollectionIsTooSmall_has_correct_code()
+    public void Records_of_different_type_are_not_equal()
     {
-        Errors.General.CollectionIsTooSmall(2, 1).Code
-            .Should().Be("general.collection-is-too-small");
+        new OtherWithSameCode().Should().NotBe(new AnotherWithSameCode());
     }
 
     [Fact]
-    public void General_CollectionIsTooLarge_has_correct_code()
+    public void Message_can_be_replaced_with_expression_keeping_the_type()
     {
-        Errors.General.CollectionIsTooLarge(5, 10).Code
-            .Should().Be("general.collection-is-too-large");
+        Error error = new OtpTooManyAttempts(1) with { Message = "Row 3: too many attempts." };
+
+        error.Should().BeOfType<OtpTooManyAttempts>();
+        error.Message.Should().Be("Row 3: too many attempts.");
+        error.Code.Should().Be("identity.otp.too-many-attempts");
     }
 
     [Fact]
-    public void General_InvalidLength_has_correct_code()
+    public void General_errors_use_three_segment_codes()
     {
-        Errors.General.InvalidLength(3, 10).Code.Should().Be("general.invalid-length");
+        new Errors.General.ValueIsRequired().Code.Should().Be("general.value.is-required");
+        new Errors.General.InvalidLength(3, 10).Code.Should().Be("general.value.invalid-length");
+        new Errors.General.NotFound("Order").Code.Should().Be("general.entity.not-found");
+        new Errors.General.CollectionIsTooSmall(2, 1).Code.Should().Be("general.collection.too-small");
+        new Errors.General.CollectionIsTooLarge(5, 10).Code.Should().Be("general.collection.too-large");
+    }
+
+    [Fact]
+    public void General_NotFound_without_id_mentions_entity_only()
+    {
+        var error = new Errors.General.NotFound("Order");
+
+        error.Message.Should().Be("'Order' was not found.");
+        error.Id.Should().BeNull();
+    }
+
+    [Fact]
+    public void General_errors_expose_their_data_as_properties()
+    {
+        var error = new Errors.General.InvalidLength(3, 10);
+
+        error.Min.Should().Be(3);
+        error.Max.Should().Be(10);
+        error.Message.Should().Be("Length must be between 3 and 10.");
     }
 }

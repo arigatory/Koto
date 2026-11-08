@@ -5,8 +5,8 @@ namespace Koto.Domain.Tests;
 
 public class ResultCollectionsTests
 {
-    private static readonly Error ErrorA = new("test.a", "A failed");
-    private static readonly Error ErrorB = new("test.b", "B failed");
+    private static readonly Error ErrorA = new TestError("test.result.a", "A failed");
+    private static readonly Error ErrorB = new TestError("test.result.b", "B failed");
 
     // ── Sequence ───────────────────────────────────────────────────────────────
 

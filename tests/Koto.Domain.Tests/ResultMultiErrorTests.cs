@@ -5,8 +5,8 @@ namespace Koto.Domain.Tests;
 
 public class ResultMultiErrorTests
 {
-    private static readonly Error ErrorA = new("test.a", "A failed");
-    private static readonly Error ErrorB = new("test.b", "B failed");
+    private static readonly Error ErrorA = new TestError("test.result.a", "A failed");
+    private static readonly Error ErrorB = new TestError("test.result.b", "B failed");
 
     // ── Multi-error construction ───────────────────────────────────────────────
 
@@ -149,6 +149,6 @@ public class ResultMultiErrorTests
             onSuccess: async x => { await Task.Yield(); return "ok"; },
             onFailure: async e => { await Task.Yield(); return e.Code; });
 
-        value.Should().Be("test.a");
+        value.Should().Be("test.result.a");
     }
 }

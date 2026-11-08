@@ -5,7 +5,7 @@ namespace Koto.Domain.Tests;
 
 public class ResultTests
 {
-    private static readonly Error SomeError = new("test.error", "Something went wrong.");
+    private static readonly Error SomeError = new TestError("test.result.error", "Something went wrong.");
 
     [Fact]
     public void Success_result_is_success()
@@ -146,7 +146,7 @@ public class ResultTests
     {
         var output = Result<int>.Failure(SomeError).Match(v => $"ok:{v}", e => $"err:{e.Code}");
 
-        output.Should().Be("err:test.error");
+        output.Should().Be("err:test.result.error");
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class ResultTests
     [Fact]
     public void Ensure_passes_through_existing_failure()
     {
-        var originalError = new Error("original", "Original error.");
+        var originalError = new TestError("test.result.original", "Original error.");
         var result = Result<int>.Failure(originalError).Ensure(x => x > 0, SomeError);
 
         result.Error.Should().Be(originalError);
