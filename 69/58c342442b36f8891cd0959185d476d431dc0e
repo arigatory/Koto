@@ -1,0 +1,27 @@
+src/Koto.Infrastructure.Http/HttpErrors.cs
+  s_1df5dd62b768e4::t_f9c100c522a8e9 1-25
+src/Koto.Infrastructure.Http/RemoteError.cs
+  s_1df5dd62b768e4::t_f9c100c522a8e9 1-40
+src/Koto.Infrastructure.Http/ServiceHttpClient.cs
+  s_1df5dd62b768e4::t_f9c100c522a8e9 2-3,9-10,15-16,27-30,32,34-45,48-50,57-58,60-63,65-70,72-115
+tests/Koto.Infrastructure.Http.Tests/ServiceHttpClientTests.cs
+  s_1df5dd62b768e4::t_f9c100c522a8e9 3-4,6,22-23,25-26,38-40,42,45-49,56,59-119,122,126,129-130,133-135
+src/Koto.Infrastructure.Http/Koto.Infrastructure.Http.csproj
+  s_1df5dd62b768e4::t_f9c100c522a8e9 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6958c342442b36f8891cd0959185d476d431dc0e",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
