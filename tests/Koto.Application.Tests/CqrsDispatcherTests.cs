@@ -16,29 +16,29 @@ public class CqrsDispatcherTests
     private sealed class VoidCmdHandler : ICommandHandler<VoidCmd>
     {
         public bool Called { get; private set; }
-        public Task<Result<Unit>> HandleAsync(VoidCmd cmd, CancellationToken ct = default)
+        public Task<AppResult<Unit>> HandleAsync(VoidCmd cmd, CancellationToken ct = default)
         {
             Called = true;
-            return Task.FromResult(Result<Unit>.Success(Unit.Value));
+            return Task.FromResult(AppResult.Success());
         }
     }
 
     private sealed class ResultCmdHandler : ICommandHandler<ResultCmd, string>
     {
-        public Task<Result<string>> HandleAsync(ResultCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<string>.Success($"value:{cmd.Value}"));
+        public Task<AppResult<string>> HandleAsync(ResultCmd cmd, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<string>.Success($"value:{cmd.Value}"));
     }
 
     private sealed class FailingResultCmdHandler : ICommandHandler<ResultCmd, string>
     {
-        public Task<Result<string>> HandleAsync(ResultCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<string>.Failure(new TestError("test.dispatcher.failed", "Failed")));
+        public Task<AppResult<string>> HandleAsync(ResultCmd cmd, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<string>.Failure(new TestError("test.dispatcher.failed", "Failed").Enrich()));
     }
 
     private sealed class TheQueryHandler : IQueryHandler<TheQuery, string>
     {
-        public Task<Result<string>> HandleAsync(TheQuery q, CancellationToken ct = default) =>
-            Task.FromResult(Result<string>.Success($"query:{q.Value}"));
+        public Task<AppResult<string>> HandleAsync(TheQuery q, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<string>.Success($"query:{q.Value}"));
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

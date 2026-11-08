@@ -1,5 +1,5 @@
 namespace Koto.Application;
 
-/// <summary>Marker interface for queries that return <see cref="Koto.Domain.Result{TResult}"/>.</summary>
+/// <summary>Marker interface for queries; handlers return <see cref="AppResult{TResult}"/>.</summary>
 /// <typeparam name="TResult">The type of the query result.</typeparam>
 public interface IQuery<TResult> : IQueryBase { }

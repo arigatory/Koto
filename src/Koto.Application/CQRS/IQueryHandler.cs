@@ -9,5 +9,5 @@ public interface IQueryHandler<TQuery, TResult>
     where TQuery : IQuery<TResult>
 {
     /// <summary>Executes <paramref name="query"/> and returns the result.</summary>
-    Task<Result<TResult>> HandleAsync(TQuery query, CancellationToken ct = default);
+    Task<AppResult<TResult>> HandleAsync(TQuery query, CancellationToken ct = default);
 }

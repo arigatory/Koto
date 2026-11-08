@@ -23,7 +23,7 @@ public sealed class CqrsDispatcher : ICqrsDispatcher
     public CqrsDispatcher(IServiceProvider services) => _services = services;
 
     /// <inheritdoc/>
-    public async Task<Result<Unit>> SendAsync(ICommand command, CancellationToken ct = default)
+    public async Task<AppResult<Unit>> SendAsync(ICommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
         var invoker = _voidInvokers.GetOrAdd(command.GetType(), t =>
@@ -33,7 +33,7 @@ public sealed class CqrsDispatcher : ICqrsDispatcher
     }
 
     /// <inheritdoc/>
-    public async Task<Result<TResult>> SendAsync<TResult>(ICommand<TResult> command, CancellationToken ct = default)
+    public async Task<AppResult<TResult>> SendAsync<TResult>(ICommand<TResult> command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
         var invoker = (ResultCommandInvoker<TResult>)_resultInvokers.GetOrAdd(
@@ -44,7 +44,7 @@ public sealed class CqrsDispatcher : ICqrsDispatcher
     }
 
     /// <inheritdoc/>
-    public async Task<Result<TResult>> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default)
+    public async Task<AppResult<TResult>> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(query);
         var invoker = (QueryInvoker<TResult>)_queryInvokers.GetOrAdd(
@@ -80,51 +80,51 @@ public sealed class CqrsDispatcher : ICqrsDispatcher
 
     private abstract class VoidCommandInvoker
     {
-        public abstract Task<Result<Unit>> InvokeAsync(ICommand command, IServiceProvider services, CancellationToken ct);
+        public abstract Task<AppResult<Unit>> InvokeAsync(ICommand command, IServiceProvider services, CancellationToken ct);
     }
 
     private sealed class VoidCommandInvokerImpl<TCommand> : VoidCommandInvoker
         where TCommand : ICommand
     {
-        public override Task<Result<Unit>> InvokeAsync(ICommand command, IServiceProvider services, CancellationToken ct)
+        public override Task<AppResult<Unit>> InvokeAsync(ICommand command, IServiceProvider services, CancellationToken ct)
         {
             var typed = (TCommand)command;
             var handler = services.GetRequiredService<ICommandHandler<TCommand>>();
-            return BuildChain<TCommand, Result<Unit>>(
+            return BuildChain<TCommand, AppResult<Unit>>(
                 typed, services, () => handler.HandleAsync(typed, ct), ct)();
         }
     }
 
     private abstract class ResultCommandInvoker<TResult>
     {
-        public abstract Task<Result<TResult>> InvokeAsync(ICommand<TResult> command, IServiceProvider services, CancellationToken ct);
+        public abstract Task<AppResult<TResult>> InvokeAsync(ICommand<TResult> command, IServiceProvider services, CancellationToken ct);
     }
 
     private sealed class ResultCommandInvokerImpl<TCommand, TResult> : ResultCommandInvoker<TResult>
         where TCommand : ICommand<TResult>
     {
-        public override Task<Result<TResult>> InvokeAsync(ICommand<TResult> command, IServiceProvider services, CancellationToken ct)
+        public override Task<AppResult<TResult>> InvokeAsync(ICommand<TResult> command, IServiceProvider services, CancellationToken ct)
         {
             var typed = (TCommand)command;
             var handler = services.GetRequiredService<ICommandHandler<TCommand, TResult>>();
-            return BuildChain<TCommand, Result<TResult>>(
+            return BuildChain<TCommand, AppResult<TResult>>(
                 typed, services, () => handler.HandleAsync(typed, ct), ct)();
         }
     }
 
     private abstract class QueryInvoker<TResult>
     {
-        public abstract Task<Result<TResult>> InvokeAsync(IQuery<TResult> query, IServiceProvider services, CancellationToken ct);
+        public abstract Task<AppResult<TResult>> InvokeAsync(IQuery<TResult> query, IServiceProvider services, CancellationToken ct);
     }
 
     private sealed class QueryInvokerImpl<TQuery, TResult> : QueryInvoker<TResult>
         where TQuery : IQuery<TResult>
     {
-        public override Task<Result<TResult>> InvokeAsync(IQuery<TResult> query, IServiceProvider services, CancellationToken ct)
+        public override Task<AppResult<TResult>> InvokeAsync(IQuery<TResult> query, IServiceProvider services, CancellationToken ct)
         {
             var typed = (TQuery)query;
             var handler = services.GetRequiredService<IQueryHandler<TQuery, TResult>>();
-            return BuildChain<TQuery, Result<TResult>>(
+            return BuildChain<TQuery, AppResult<TResult>>(
                 typed, services, () => handler.HandleAsync(typed, ct), ct)();
         }
     }

@@ -13,8 +13,8 @@ public class KotoApplicationOptionsTests
 
     private sealed class PingHandler : ICommandHandler<PingCmd, string>
     {
-        public Task<Result<string>> HandleAsync(PingCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<string>.Success("pong"));
+        public Task<AppResult<string>> HandleAsync(PingCmd cmd, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<string>.Success("pong"));
     }
 
     [Fact]

@@ -14,8 +14,8 @@ public class PipelineBehaviorTests
 
     private sealed class TheCmdHandler : ICommandHandler<TheCmd, int>
     {
-        public Task<Result<int>> HandleAsync(TheCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<int>.Success(cmd.Value * 2));
+        public Task<AppResult<int>> HandleAsync(TheCmd cmd, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<int>.Success(cmd.Value * 2));
     }
 
     private sealed class OrderTracker
@@ -24,12 +24,12 @@ public class PipelineBehaviorTests
     }
 
     // Behaviors are resolved against the CONCRETE command type (not the ICommand<T> marker),
-    // so test behaviors implement IPipelineBehavior<TheCmd, Result<int>>.
+    // so test behaviors implement IPipelineBehavior<TheCmd, AppResult<int>>.
     private sealed class FirstBehavior(OrderTracker tracker)
-        : IPipelineBehavior<TheCmd, Result<int>>
+        : IPipelineBehavior<TheCmd, AppResult<int>>
     {
-        public async Task<Result<int>> HandleAsync(
-            TheCmd request, Func<Task<Result<int>>> next, CancellationToken ct)
+        public async Task<AppResult<int>> HandleAsync(
+            TheCmd request, Func<Task<AppResult<int>>> next, CancellationToken ct)
         {
             tracker.Order.Add("first:before");
             var result = await next();
@@ -39,10 +39,10 @@ public class PipelineBehaviorTests
     }
 
     private sealed class SecondBehavior(OrderTracker tracker)
-        : IPipelineBehavior<TheCmd, Result<int>>
+        : IPipelineBehavior<TheCmd, AppResult<int>>
     {
-        public async Task<Result<int>> HandleAsync(
-            TheCmd request, Func<Task<Result<int>>> next, CancellationToken ct)
+        public async Task<AppResult<int>> HandleAsync(
+            TheCmd request, Func<Task<AppResult<int>>> next, CancellationToken ct)
         {
             tracker.Order.Add("second:before");
             var result = await next();
@@ -75,28 +75,28 @@ public class PipelineBehaviorTests
     private sealed record OuterCmd : ICommand<int>;
     private sealed class OuterCmdHandler(ICqrsDispatcher dispatcher) : ICommandHandler<OuterCmd, int>
     {
-        public async Task<Result<int>> HandleAsync(OuterCmd cmd, CancellationToken ct = default) =>
+        public async Task<AppResult<int>> HandleAsync(OuterCmd cmd, CancellationToken ct = default) =>
             await dispatcher.SendAsync<int>(new TheCmd(21), ct);
     }
 
     private sealed record TheQuery(int Value) : IQuery<int>;
     private sealed class TheQueryHandler : IQueryHandler<TheQuery, int>
     {
-        public Task<Result<int>> HandleAsync(TheQuery q, CancellationToken ct = default) =>
-            Task.FromResult(Result<int>.Success(q.Value));
+        public Task<AppResult<int>> HandleAsync(TheQuery q, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<int>.Success(q.Value));
     }
 
     private sealed record FailCmd : ICommand<int>;
     private sealed class FailCmdHandler : ICommandHandler<FailCmd, int>
     {
-        public Task<Result<int>> HandleAsync(FailCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<int>.Failure(new TestError("test.command.failed", "nope")));
+        public Task<AppResult<int>> HandleAsync(FailCmd cmd, CancellationToken ct = default) =>
+            Task.FromResult(AppResult<int>.Failure(new TestError("test.command.failed", "nope").Enrich()));
     }
 
     private sealed record ThrowCmd : ICommand<int>;
     private sealed class ThrowCmdHandler : ICommandHandler<ThrowCmd, int>
     {
-        public Task<Result<int>> HandleAsync(ThrowCmd cmd, CancellationToken ct = default) =>
+        public Task<AppResult<int>> HandleAsync(ThrowCmd cmd, CancellationToken ct = default) =>
             throw new InvalidOperationException("boom");
     }
 
@@ -119,8 +119,8 @@ public class PipelineBehaviorTests
         var dispatcher = Build(s =>
         {
             s.AddTransient<ICommandHandler<TheCmd, int>, TheCmdHandler>();
-            s.AddSingleton<IPipelineBehavior<TheCmd, Result<int>>>(new FirstBehavior(tracker));
-            s.AddSingleton<IPipelineBehavior<TheCmd, Result<int>>>(new SecondBehavior(tracker));
+            s.AddSingleton<IPipelineBehavior<TheCmd, AppResult<int>>>(new FirstBehavior(tracker));
+            s.AddSingleton<IPipelineBehavior<TheCmd, AppResult<int>>>(new SecondBehavior(tracker));
         });
 
         await dispatcher.SendAsync<int>(new TheCmd(3));

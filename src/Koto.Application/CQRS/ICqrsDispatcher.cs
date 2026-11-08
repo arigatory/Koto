@@ -9,11 +9,11 @@ namespace Koto.Application;
 public interface ICqrsDispatcher
 {
     /// <summary>Sends a void command through the pipeline.</summary>
-    Task<Result<Unit>> SendAsync(ICommand command, CancellationToken ct = default);
+    Task<AppResult<Unit>> SendAsync(ICommand command, CancellationToken ct = default);
 
     /// <summary>Sends a result-bearing command through the pipeline.</summary>
-    Task<Result<TResult>> SendAsync<TResult>(ICommand<TResult> command, CancellationToken ct = default);
+    Task<AppResult<TResult>> SendAsync<TResult>(ICommand<TResult> command, CancellationToken ct = default);
 
     /// <summary>Dispatches a query through the pipeline.</summary>
-    Task<Result<TResult>> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default);
+    Task<AppResult<TResult>> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default);
 }
