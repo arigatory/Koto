@@ -128,3 +128,14 @@ var result = await Result<string>.Success(request.Email)
 - **`MatchAsync`** перегрузки (async success + async/sync failure) — убирают обёртки `Match<Task<...>>` с `Task.FromResult` у потребителей.
 - **`TapErrors(Action<IReadOnlyList<Error>>)`** — побочный эффект по всем ошибкам.
 - `IResultBase` расширен свойством `Errors` (нужно `Result.Combine` и HTTP-маппингу); маркеры `IsSuccess`/`IsFailure` не тронуты.
+
+## Ревизия 2026-11-08 (v0.5.0-preview.1, см. ADR-026)
+
+- **`Error` → `FirstError`.** Первая ошибка переименована: `return x.Error;` при мульти-ошибочном результате
+  молча терял остальные (≈85 мест в потребителях). `Errors` теперь `ErrorList<Error>` с неявной конверсией
+  в `Result<T>`, поэтому `return x.Errors;` так же короток и сохраняет всё. `TapError` удалён (есть `TapErrors`),
+  `Match`/`MatchAsync` получают `ErrorList<Error>`, а не первую ошибку.
+- **Второй тип результата.** В `Koto.Application` появился `AppResult<T>` с `ErrorList<EnrichedError>` —
+  результат хендлеров и диспетчера. NF1 («тип ошибки фиксирован, не обобщённый `E`») сохранён: оба класса
+  фиксируют свой тип ошибки; обобщённый `Result<T, E>` по-прежнему отклонён.
+- `IResultFactory<TSelf>` удалён; его роль для `AppResult` играет `IAppResultFactory<TSelf>`.

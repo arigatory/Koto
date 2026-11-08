@@ -167,3 +167,14 @@ general.value.*    → 400
 - **`Error.Field`** — новое опциональное свойство (`string? Field { get; init; }`): имя поля/свойства, к которому относится ошибка. Заполняется **application-слоем** (validation pipeline), доменные фабрики обычно оставляют `null`. Используется HTTP-слоем для validation problem details (`errors` dictionary по полям). Доменная чистота сохранена: `Field` — имя свойства модели, не HTTP-концепция.
 - **`Serialize()` удалён.** Формат `"code::message"` был транспортным хаком для FluentValidation v7: структурная ошибка ехала строкой в `ErrorMessage` без возможности обратного разбора. Начиная с FV12 доменный `Error` передаётся через `ValidationFailure.CustomState` (+ `ErrorCode`), структура не теряется (см. ревизию ADR-009). Требование F5 (сериализация для логов) покрывается сериализацией record-а как такового (JSON), выделенный строковый формат не нужен.
 - Централизованный маппинг «код → HTTP-статус» из раздела «Решение» теперь реализован библиотекой: `KotoHttpErrorOptions` в пакете `Koto.Api.AspNetCore` (см. ADR-020); незамапленные бизнес-коды дают 422, а не 500.
+
+## Ревизия 2026-11-08 (v0.5.0-preview.1, см. ADR-026)
+
+- **`Error` абстрактный.** Инлайновый `new Error(code, message)` невозможен; каждая ошибка — record из
+  каталога, свойства record — её гарантированные данные (`details`). Риск «опечатка в строковом коде»
+  закрыт: код валидируется при создании (≥3 сегмента kebab-case), `Koto.Testing.ErrorCatalog` проверяет
+  формат и уникальность по сборкам.
+- **`Field` переехал** из `Error` в `EnrichedError` (`Koto.Application`): домен снова не знает о полях запроса.
+- **Коды `Errors.General` приведены к трём сегментам:** `general.value.is-required`,
+  `general.value.invalid-length`, `general.entity.not-found`, `general.collection.too-small`,
+  `general.collection.too-large`. `Errors.General.*` — nested record'ы, создаются через `new`.
