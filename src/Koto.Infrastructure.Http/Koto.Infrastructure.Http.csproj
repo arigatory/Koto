@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Koto.Domain\Koto.Domain.csproj" />
+    <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
   </ItemGroup>
 
 </Project>

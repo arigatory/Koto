@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using AwesomeAssertions;
+using Koto.Domain;
 using Koto.Infrastructure.Http;
 using NSubstitute;
 
@@ -16,16 +19,11 @@ file sealed class WeatherClient : ServiceHttpClient
 {
     public WeatherClient(HttpClient http) : base(http) { }
 
-    public Task<Koto.Domain.Result<WeatherDto>> GetAsync(string city, CancellationToken ct = default) =>
-        ReadResultAsync<WeatherDto>(
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = JsonContent.Create(new WeatherDto(city, 22.5))
-            }, ct);
+    public Task<Result<WeatherDto>> ReadAsync(HttpResponseMessage response, CancellationToken ct = default) =>
+        ReadResultAsync<WeatherDto>(response, ct);
 
-    public Task<Koto.Domain.Result<WeatherDto>> GetWithErrorAsync(
-        HttpStatusCode status, CancellationToken ct = default) =>
-        ReadResultAsync<WeatherDto>(new HttpResponseMessage(status), ct);
+    public Task<Result<Unit>> ReadUnitAsync(HttpResponseMessage response, CancellationToken ct = default) =>
+        ReadResultAsync<Unit>(response, ct);
 }
 
 // ---------------------------------------------------------------------------
@@ -37,34 +35,104 @@ public sealed class ServiceHttpClientTests
     private static HttpClient DummyClient() =>
         new() { BaseAddress = new Uri("https://example.test") };
 
+    private static HttpResponseMessage Json(HttpStatusCode status, string body) =>
+        new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+
     [Fact]
-    public async Task ReadResultAsync_deserializes_success_response()
+    public async Task Bare_dto_success_response_is_deserialized()
     {
         var client = new WeatherClient(DummyClient());
-        var result = await client.GetAsync("London");
+
+        var result = await client.ReadAsync(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = JsonContent.Create(new WeatherDto("London", 22.5)),
+        });
 
         result.IsSuccess.Should().BeTrue();
         result.Value.City.Should().Be("London");
     }
 
     [Fact]
-    public async Task ReadResultAsync_maps_404_to_not_found_error()
+    public async Task Envelope_success_returns_result()
     {
         var client = new WeatherClient(DummyClient());
-        var result = await client.GetWithErrorAsync(HttpStatusCode.NotFound);
+        var body = """{"success":true,"result":{"city":"Oslo","temperature":3.5},"errors":[],"correlationId":"c","timestamp":"2026-11-08T02:11:03+00:00"}""";
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("general.not-found");
+        var result = await client.ReadAsync(Json(HttpStatusCode.OK, body));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new WeatherDto("Oslo", 3.5));
     }
 
     [Fact]
-    public async Task ReadResultAsync_maps_500_to_unexpected_error()
+    public async Task Envelope_void_success_returns_unit()
     {
         var client = new WeatherClient(DummyClient());
-        var result = await client.GetWithErrorAsync(HttpStatusCode.InternalServerError);
+        var body = """{"success":true,"result":null,"errors":[],"correlationId":null,"timestamp":"2026-11-08T02:11:03+00:00"}""";
+
+        var result = await client.ReadUnitAsync(Json(HttpStatusCode.OK, body));
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Envelope_failure_maps_to_remote_errors_with_details()
+    {
+        var client = new WeatherClient(DummyClient());
+        var body = """
+            {"success":false,"result":null,
+             "errors":[{"code":"identity.otp.too-many-attempts","message":"Too many attempts.","field":null,"details":{"retryAfterSeconds":42}},
+                       {"code":"general.value.is-required","message":"Required.","field":"email","details":{}}],
+             "correlationId":"c","timestamp":"2026-11-08T02:11:03+00:00"}
+            """;
+
+        var result = await client.ReadAsync(Json(HttpStatusCode.UnprocessableEntity, body));
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("general.unexpected");
+        result.Errors.Should().HaveCount(2);
+        var first = result.FirstError.Should().BeOfType<RemoteError>().Subject;
+        first.Code.Should().Be("identity.otp.too-many-attempts");
+        first.Message.Should().Be("Too many attempts.");
+        first.Field.Should().BeNull();
+        ((JsonElement)first.Details["retryAfterSeconds"]!).GetInt32().Should().Be(42);
+        result.Errors[1].Should().BeOfType<RemoteError>().Which.Field.Should().Be("email");
+    }
+
+    [Fact]
+    public async Task Envelope_error_with_malformed_code_is_kept_as_unknown_remote_error()
+    {
+        var client = new WeatherClient(DummyClient());
+        var body = """{"success":false,"result":null,"errors":[{"code":"Weird Code","message":"m","field":null,"details":{}}],"correlationId":null,"timestamp":"2026-11-08T02:11:03+00:00"}""";
+
+        var result = await client.ReadAsync(Json(HttpStatusCode.BadRequest, body));
+
+        var error = result.FirstError.Should().BeOfType<RemoteError>().Subject;
+        error.Code.Should().Be("general.remote.unknown-error");
+        error.Details["remoteCode"].Should().Be("Weird Code");
+    }
+
+    [Fact]
+    public async Task Non_envelope_404_maps_to_resource_not_found()
+    {
+        var client = new WeatherClient(DummyClient());
+
+        var result = await client.ReadAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
+
+        result.IsFailure.Should().BeTrue();
+        result.FirstError.Code.Should().Be("general.resource.not-found");
+    }
+
+    [Fact]
+    public async Task Non_envelope_500_maps_to_server_unexpected_with_status_detail()
+    {
+        var client = new WeatherClient(DummyClient());
+
+        var result = await client.ReadAsync(Json(HttpStatusCode.InternalServerError, "<html>oops</html>"));
+
+        result.IsFailure.Should().BeTrue();
+        var error = result.FirstError.Should().BeOfType<HttpErrors.ServerUnexpected>().Subject;
+        error.Code.Should().Be("general.server.unexpected");
+        error.StatusCode.Should().Be(500);
     }
 
     [Fact]
