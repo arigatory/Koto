@@ -1,0 +1,23 @@
+.github/workflows/publish.yml
+  s_1df5dd62b768e4::t_14b180a15332e6 14-16,43-52,58
+CLAUDE.md
+  s_1df5dd62b768e4::t_01850746746023 9-10
+skills/koto/references/publishing.md
+  s_1df5dd62b768e4::t_9a2be1c302b8c6 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e49ba027f0722cf675c6920625736c56db3376b8",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
