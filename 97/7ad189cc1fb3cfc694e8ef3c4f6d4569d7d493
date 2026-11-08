@@ -1,0 +1,52 @@
+src/Koto.Api.FastEndpoints/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 110-114
+PLAN.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 13-14
+skills/koto/references/error-model.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 176-177
+skills/koto/references/workflow.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 26,36
+CLAUDE.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 10-11
+docs/migrations/0.4-to-0.5.md
+  s_1df5dd62b768e4::t_b6cbd1e15f7855 396-397,568
+  s_1df5dd62b768e4::t_18f3677552baec 1-395,398-567,569-610
+skills/koto/references/publishing.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 8,22
+README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 148-149,222
+src/Koto.EventSourcing.Marten/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 109-113
+skills/koto/SKILL.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 21
+src/Koto.Infrastructure.EFCore/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 110-114
+src/Koto.Validation/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 69-73
+src/Koto.Api.AspNetCore/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 101-105
+src/Koto.Application/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 149-153
+src/Koto.Domain/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 139-143
+src/Koto.Infrastructure.Http/README.md
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 97-101
+src/Directory.Build.props
+  s_1df5dd62b768e4::t_772e8cb8a2bd6f 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "977ad189cc1fb3cfc694e8ef3c4f6d4569d7d493",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
