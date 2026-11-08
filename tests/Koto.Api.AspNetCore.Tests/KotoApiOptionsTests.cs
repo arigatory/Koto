@@ -66,11 +66,11 @@ public class KotoApiOptionsTests
     {
         var errors = new Error[]
         {
-            new TestError("orders.order.payment-failed", "first"),
-            new TestError("orders.order.not-found", "second"),
+            new TestError("orders.order.payment-failed", "first").ForField("payment"),   // field-bound → 400
+            new TestError("orders.order.not-found", "second"),                           // would be 404 on its own
         };
 
-        new KotoApiOptions().StatusCodeFor(errors).Should().Be(422);
+        new KotoApiOptions().StatusCodeFor(errors).Should().Be(400);
     }
 
     [Fact]

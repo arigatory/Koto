@@ -13,6 +13,7 @@ public class EnrichmentGuardTests
 {
     private sealed record Full(int Capacity) : Error("test.guard.full", "Full.");
     private sealed record FullWithAlternative(Full Cause, Guid AlternativeId) : EnrichedError(Cause);
+    private sealed record FullForWaitlist(Full Cause, int Position) : EnrichedError(Cause);
     private sealed record Other() : Error("test.guard.other", "Other.");
 
     private sealed class FakeEnvironment(string name) : IHostEnvironment
@@ -102,6 +103,18 @@ public class EnrichmentGuardTests
         var guard = new EnrichmentGuard(Options.Create(new KotoApiOptions { EnrichmentGuard = EnrichmentGuardMode.Throw }));
 
         var act = () => guard.Check([new Full(3).Enrich()]);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Passes_when_any_of_several_fuller_types_is_used()
+    {
+        var guard = Guard(EnrichmentGuardMode.Throw);
+
+        var act = () => guard.Check([
+            new FullWithAlternative(new Full(3), Guid.NewGuid()),
+            new FullForWaitlist(new Full(3), 2)]);
 
         act.Should().NotThrow();
     }

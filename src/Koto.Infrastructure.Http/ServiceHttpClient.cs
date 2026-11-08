@@ -38,9 +38,11 @@ public abstract class ServiceHttpClient
         {
             if (!envelope.Success)
                 return Result<T>.Failure(envelope.Errors.Select(RemoteError.From));
-            if (envelope.Result is null && typeof(T) == typeof(Unit))
+            if (typeof(T) == typeof(Unit))
                 return Result<T>.Success((T)(object)Unit.Value);
-            return Result<T>.Success(envelope.Result!);
+            return envelope.Result is null
+                ? Result<T>.Failure(new HttpErrors.ResponseEmpty())
+                : Result<T>.Success(envelope.Result);
         }
 
         if (response.IsSuccessStatusCode)

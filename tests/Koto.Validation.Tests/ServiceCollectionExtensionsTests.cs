@@ -80,4 +80,16 @@ public class ServiceCollectionExtensionsTests
         result.FirstError.Field.Should().Be("Name");
         uow.Calls.Should().BeEmpty();
     }
+
+    [Fact]
+    public void AddKotoValidation_before_AddKotoApplication_still_registers_the_behavior_once()
+    {
+        var services = new ServiceCollection();
+        services.AddKotoValidation(TestAssembly);
+        services.AddKotoApplication(
+            o => { o.AddLoggingBehavior().AddValidationBehavior().AddTransactionBehavior(); o.ValidateHandlers = false; },
+            TestAssembly);
+
+        BehaviorRegistrations(services).Count(t => t == typeof(ValidationBehavior<,>)).Should().Be(1);
+    }
 }

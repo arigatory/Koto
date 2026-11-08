@@ -34,7 +34,9 @@ public readonly struct ErrorList<TError> : IReadOnlyList<TError>
 
     /// <inheritdoc/>
     public TError this[int index] =>
-        _items is null ? throw new ArgumentOutOfRangeException(nameof(index)) : _items[index];
+        _items is null || (uint)index >= (uint)_items.Length
+            ? throw new ArgumentOutOfRangeException(nameof(index))
+            : _items[index];
 
     /// <summary>Maps every error, preserving order. <paramref name="selector"/> must not return <c>null</c>.</summary>
     public ErrorList<TOut> Select<TOut>(Func<TError, TOut> selector)

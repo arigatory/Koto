@@ -75,7 +75,9 @@ public sealed class AppResult<T> : IResultBase, IAppResultFactory<AppResult<T>>
     public static AppResult<T> Failure(ErrorList<EnrichedError> errors)
     {
         if (errors.Count == 0)
-            throw new ArgumentException("A failed result requires at least one error.", nameof(errors));
+            throw new ArgumentException(
+                "A failed result requires at least one error. Did you return the Errors of a successful result?",
+                nameof(errors));
         return new(errors);
     }
 

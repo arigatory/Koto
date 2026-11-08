@@ -15,10 +15,16 @@ namespace Koto.Api.AspNetCore;
 /// whose constructor takes an error of type <c>X</c> (e.g. <c>MeetupFullWithAlternative(MeetupFull Cause, …)</c>),
 /// a bare <c>X</c> reaching the response is a violation. Throws in Development, warns elsewhere
 /// (<see cref="KotoApiOptions.EnrichmentGuard"/> overrides).
+/// <para>
+/// The catalog is built from constructor parameters: <em>every</em> <see cref="Error"/>-typed parameter
+/// of a record deriving from <see cref="EnrichedError"/> marks that parameter type as "incomplete on the
+/// wire". Several fuller records may share a cause; any of them satisfies the guard. Avoid giving such
+/// records error-typed parameters that are not the wrapped cause.
+/// </para>
 /// </summary>
 public sealed class EnrichmentGuard
 {
-    private readonly Lazy<Dictionary<Type, Type>> _fullerTypes;
+    private readonly Lazy<Dictionary<Type, List<Type>>> _fullerTypes;
     private readonly ILogger<EnrichmentGuard> _logger;
 
     /// <summary>Creates the guard over the assemblies registered by <c>AddKotoApplication</c>.</summary>
@@ -34,7 +40,7 @@ public sealed class EnrichmentGuard
             ? EnrichmentGuardMode.Off
             : options.Value.EnrichmentGuard
               ?? (environment?.IsDevelopment() == true ? EnrichmentGuardMode.Throw : EnrichmentGuardMode.Warn);
-        _fullerTypes = new Lazy<Dictionary<Type, Type>>(() => Build(assemblies?.Assemblies ?? []));
+        _fullerTypes = new Lazy<Dictionary<Type, List<Type>>>(() => Build(assemblies?.Assemblies ?? []));
     }
 
     /// <summary>The effective mode.</summary>
@@ -50,21 +56,22 @@ public sealed class EnrichmentGuard
 
         foreach (var error in errors)
         {
-            var fuller = FindFullerType(error.Inner.GetType());
-            if (fuller is null || fuller.IsInstanceOfType(error))
+            var fullerTypes = FindFullerTypes(error.Inner.GetType());
+            if (fullerTypes is null || fullerTypes.Any(t => t.IsInstanceOfType(error)))
                 continue;
 
+            var names = string.Join(" / ", fullerTypes.Select(t => t.Name));
             var message =
                 $"Error '{error.Inner.GetType().Name}' ({error.Code}) reached the API without enrichment: " +
-                $"'{fuller.Name}' adds data clients rely on. Enrich it in the handler, e.g. " +
-                $"errors.Enrich(e => e is {error.Inner.GetType().Name} x ? new {fuller.Name}(x, …) : e.Enrich()).";
+                $"'{names}' adds data clients rely on. Enrich it in the handler, e.g. " +
+                $"errors.Enrich(e => e is {error.Inner.GetType().Name} x ? new {fullerTypes[0].Name}(x, …) : e.Enrich()).";
             if (Mode == EnrichmentGuardMode.Throw)
                 throw new InvalidOperationException(message);
             _logger.LogWarning("{Message}", message);
         }
     }
 
-    private Type? FindFullerType(Type errorType)
+    private List<Type>? FindFullerTypes(Type errorType)
     {
         for (var type = errorType; type is not null && type != typeof(Error); type = type.BaseType)
         {
@@ -75,9 +82,9 @@ public sealed class EnrichmentGuard
         return null;
     }
 
-    private static Dictionary<Type, Type> Build(IEnumerable<Assembly> assemblies)
+    private static Dictionary<Type, List<Type>> Build(IEnumerable<Assembly> assemblies)
     {
-        var map = new Dictionary<Type, Type>();
+        var map = new Dictionary<Type, List<Type>>();
         foreach (var type in assemblies.SelectMany(AssemblyScanning.GetLoadableTypes))
         {
             if (type.IsAbstract || type == typeof(EnrichedError) || !typeof(EnrichedError).IsAssignableFrom(type))
@@ -89,7 +96,10 @@ public sealed class EnrichmentGuard
                 if (parameterType != typeof(Error) && parameterType != typeof(EnrichedError)
                     && typeof(Error).IsAssignableFrom(parameterType))
                 {
-                    map.TryAdd(parameterType, type);
+                    if (!map.TryGetValue(parameterType, out var list))
+                        map[parameterType] = list = [];
+                    if (!list.Contains(type))
+                        list.Add(type);
                 }
             }
         }

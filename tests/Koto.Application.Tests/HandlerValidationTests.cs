@@ -64,4 +64,15 @@ public class HandlerValidationTests
 
         assemblies.Assemblies.Should().BeEquivalentTo([TestAssembly, typeof(Error).Assembly]);
     }
+
+    [Fact]
+    public void Calling_AddKotoApplication_twice_does_not_duplicate_behaviors_or_dispatcher()
+    {
+        var services = new ServiceCollection();
+        services.AddKotoApplication(o => { o.AddLoggingBehavior(); o.ValidateHandlers = false; }, TestAssembly);
+        services.AddKotoApplication(o => { o.AddLoggingBehavior(); o.ValidateHandlers = false; }, typeof(Error).Assembly);
+
+        services.Count(d => d.ServiceType == typeof(IPipelineBehavior<,>) && d.ImplementationType == typeof(LoggingBehavior<,>)).Should().Be(1);
+        services.Count(d => d.ServiceType == typeof(ICqrsDispatcher)).Should().Be(1);
+    }
 }

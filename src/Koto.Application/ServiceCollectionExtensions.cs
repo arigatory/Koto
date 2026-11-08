@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Koto.Application;
 
@@ -86,13 +87,15 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(configure);
         ArgumentNullException.ThrowIfNull(assemblies);
 
-        services.AddScoped<ICqrsDispatcher, CqrsDispatcher>();
+        services.TryAddScoped<ICqrsDispatcher, CqrsDispatcher>();
         RegisterAssemblies(services, assemblies);
 
         var options = new KotoApplicationOptions();
         configure(options);
+        // TryAddEnumerable: a behavior type is registered once however many times it is added
+        // (repeated AddKotoApplication calls, AddKotoValidation before or after this call).
         foreach (var behaviorType in options.BehaviorTypes)
-            services.AddTransient(typeof(IPipelineBehavior<,>), behaviorType);
+            services.TryAddEnumerable(ServiceDescriptor.Transient(typeof(IPipelineBehavior<,>), behaviorType));
 
         var scannedTypes = assemblies
             .SelectMany(AssemblyScanning.GetLoadableTypes)

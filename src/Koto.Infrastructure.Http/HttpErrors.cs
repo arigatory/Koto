@@ -19,6 +19,9 @@ public static class HttpErrors
     /// <param name="StatusCode">The HTTP status code.</param>
     public sealed record ServerUnexpected(int StatusCode) : Error("general.server.unexpected", "The remote service failed unexpectedly.");
 
+    /// <summary>The remote service reported success but sent no result where one was expected.</summary>
+    public sealed record ResponseEmpty() : Error("general.response.empty", "The remote service returned an empty result.");
+
     /// <summary>Any other non-success HTTP status.</summary>
     /// <param name="StatusCode">The HTTP status code.</param>
     public sealed record HttpFailure(int StatusCode) : Error("general.server.http-error", $"The remote service responded with HTTP {StatusCode}.");

@@ -74,7 +74,9 @@ public sealed class Result<T> : IResultBase
     public static Result<T> Failure(ErrorList<Error> errors)
     {
         if (errors.Count == 0)
-            throw new ArgumentException("A failed result requires at least one error.", nameof(errors));
+            throw new ArgumentException(
+                "A failed result requires at least one error. Did you return the Errors of a successful result?",
+                nameof(errors));
         return new(errors);
     }
 

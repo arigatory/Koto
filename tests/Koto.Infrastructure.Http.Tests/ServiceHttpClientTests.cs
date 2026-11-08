@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
+using Koto.Application;
 using Koto.Domain;
 using Koto.Infrastructure.Http;
 using NSubstitute;
@@ -96,6 +97,44 @@ public sealed class ServiceHttpClientTests
         first.Field.Should().BeNull();
         ((JsonElement)first.Details["retryAfterSeconds"]!).GetInt32().Should().Be(42);
         result.Errors[1].Should().BeOfType<RemoteError>().Which.Field.Should().Be("email");
+    }
+
+    [Fact]
+    public async Task Remote_error_keeps_field_and_details_when_enriched_again()
+    {
+        var client = new WeatherClient(DummyClient());
+        var body = """{"success":false,"result":null,"errors":[{"code":"identity.otp.too-many-attempts","message":"m","field":"code","details":{"retryAfterSeconds":42}}],"correlationId":null,"timestamp":"2026-11-08T02:11:03+00:00"}""";
+
+        var result = await client.ReadAsync(Json(HttpStatusCode.UnprocessableEntity, body));
+        var enriched = result.FirstError.Enrich();
+
+        enriched.Should().BeOfType<RemoteError>();
+        enriched.Field.Should().Be("code");
+        ((JsonElement)ErrorDetails.Of(enriched)["retryAfterSeconds"]!).GetInt32().Should().Be(42);
+        EnvelopeError.From(enriched).Details.Should().ContainKey("retryAfterSeconds");
+    }
+
+    [Fact]
+    public async Task Envelope_with_null_result_for_a_non_unit_type_is_a_failure_not_an_exception()
+    {
+        var client = new WeatherClient(DummyClient());
+        var body = """{"success":true,"result":null,"errors":[],"correlationId":null,"timestamp":"2026-11-08T02:11:03+00:00"}""";
+
+        var result = await client.ReadAsync(Json(HttpStatusCode.OK, body));
+
+        result.IsFailure.Should().BeTrue();
+        result.FirstError.Should().BeOfType<HttpErrors.ResponseEmpty>();
+    }
+
+    [Fact]
+    public async Task Remote_error_without_details_defaults_to_empty()
+    {
+        var client = new WeatherClient(DummyClient());
+        var body = """{"success":false,"result":null,"errors":[{"code":"identity.otp.expired","message":"m","field":null,"details":null}],"correlationId":null,"timestamp":"2026-11-08T02:11:03+00:00"}""";
+
+        var result = await client.ReadAsync(Json(HttpStatusCode.UnprocessableEntity, body));
+
+        result.FirstError.Should().BeOfType<RemoteError>().Which.Details.Should().BeEmpty();
     }
 
     [Fact]

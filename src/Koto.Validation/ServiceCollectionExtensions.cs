@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using Koto.Application;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Koto.Validation;
 
@@ -12,7 +13,8 @@ public static class ServiceCollectionExtensions
     /// Scans <paramref name="assemblies"/> for all <see cref="IValidator{T}"/> implementations and
     /// registers <see cref="ValidationBehavior{TRequest,TResponse}"/> unless it was already added
     /// through <see cref="KotoApplicationOptionsExtensions.AddValidationBehavior"/> (which controls
-    /// its position in the behavior chain).
+    /// its position in the behavior chain). Call <c>AddKotoApplication</c> first: whichever call comes
+    /// first fixes the behavior's position, and the behavior is never registered twice.
     /// </summary>
     public static IServiceCollection AddKotoValidation(
         this IServiceCollection services,
@@ -20,11 +22,7 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(assemblies);
 
-        if (!services.Any(d => d.ServiceType == typeof(IPipelineBehavior<,>)
-                               && d.ImplementationType == typeof(ValidationBehavior<,>)))
-        {
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-        }
+        services.TryAddEnumerable(ServiceDescriptor.Transient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>)));
 
         foreach (var assembly in assemblies)
         {
