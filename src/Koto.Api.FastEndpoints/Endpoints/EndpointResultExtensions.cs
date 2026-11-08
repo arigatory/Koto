@@ -22,12 +22,16 @@ internal static class EndpointResultExtensions
         await httpContext.Response.SendAsync(envelope, result.ResolveStatusCode(httpContext), cancellation: ct).ConfigureAwait(false);
     }
 
-    /// <summary>Awaits a result-bearing dispatch and sends the typed envelope.</summary>
+    /// <summary>Awaits a result-bearing dispatch: 200 with the typed envelope on success, classified status with <c>Envelope&lt;object?&gt;</c> on failure.</summary>
     public static async Task SendDispatchAsync<TResult>(this IEndpoint endpoint, Task<AppResult<TResult>> pending, CancellationToken ct)
     {
         var result = await pending.ConfigureAwait(false);
         var httpContext = endpoint.HttpContext;
-        var envelope = result.ToEnvelope(httpContext.GetKotoTimeProvider().GetUtcNow(), CorrelationContext.Current.Value);
-        await httpContext.Response.SendAsync(envelope, result.ResolveStatusCode(httpContext), cancellation: ct).ConfigureAwait(false);
+        var now = httpContext.GetKotoTimeProvider().GetUtcNow();
+        var correlationId = CorrelationContext.Current.Value;
+        if (result.IsSuccess)
+            await httpContext.Response.SendAsync(Envelope.Ok(result.Value, now, correlationId), cancellation: ct).ConfigureAwait(false);
+        else
+            await httpContext.Response.SendAsync(Envelope.Fail(result.Errors, now, correlationId), result.ResolveStatusCode(httpContext), cancellation: ct).ConfigureAwait(false);
     }
 }

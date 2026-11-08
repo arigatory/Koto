@@ -10,16 +10,16 @@ namespace Koto.Api.AspNetCore;
 /// </summary>
 public static class ResultActionResultExtensions
 {
-    /// <summary>Maps a result to an envelope: 200 on success, classified status on failure.</summary>
+    /// <summary>Maps a result to an envelope: 200 with <c>Envelope&lt;T&gt;</c> on success; classified status with <c>Envelope&lt;object?&gt;</c> on failure.</summary>
     public static ActionResult<Envelope<T>> ToActionResult<T>(this AppResult<T> result, ControllerBase controller, string? correlationId = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(controller);
         var httpContext = controller.HttpContext;
-        var envelope = result.ToEnvelope(httpContext.GetKotoTimeProvider().GetUtcNow(), correlationId);
+        var now = httpContext.GetKotoTimeProvider().GetUtcNow();
         return result.IsSuccess
-            ? envelope
-            : new ObjectResult(envelope) { StatusCode = result.ResolveStatusCode(httpContext) };
+            ? Envelope.Ok(result.Value, now, correlationId)
+            : new ObjectResult(Envelope.Fail(result.Errors, now, correlationId)) { StatusCode = result.ResolveStatusCode(httpContext) };
     }
 
     /// <summary>Maps a void result to an envelope whose result is <c>null</c>.</summary>

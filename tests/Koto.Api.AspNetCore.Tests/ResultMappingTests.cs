@@ -57,7 +57,8 @@ public class ResultMappingTests
     {
         var result = AppResult<string>.Failure(NotFound).ToHttpResult(CreateHttpContext());
 
-        var json = result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which;
+        // failures travel as Envelope<object?> (result: null for every T); Envelope<T> stays the declared 200 type
+        var json = result.Should().BeOfType<JsonHttpResult<Envelope<object?>>>().Which;
         json.StatusCode.Should().Be(404);
         json.Value!.Success.Should().BeFalse();
         json.Value.Errors.Should().ContainSingle().Which.Code.Should().Be("orders.order.not-found");
@@ -71,7 +72,7 @@ public class ResultMappingTests
         var result = AppResult<string>.Failure(new TestError("subscription.payment.failed", "gateway down").Enrich())
             .ToHttpResult(httpContext);
 
-        result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which.StatusCode.Should().Be(502);
+        result.Should().BeOfType<JsonHttpResult<Envelope<object?>>>().Which.StatusCode.Should().Be(502);
     }
 
     [Fact]
@@ -81,7 +82,7 @@ public class ResultMappingTests
 
         var result = AppResult<string>.Failure(NotFound).ToHttpResult(httpContext);
 
-        var json = result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which;
+        var json = result.Should().BeOfType<JsonHttpResult<Envelope<object?>>>().Which;
         json.StatusCode.Should().Be(404);
         json.Value!.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
     }
@@ -124,7 +125,7 @@ public class ResultMappingTests
 
         var objectResult = actionResult.Result.Should().BeOfType<ObjectResult>().Which;
         objectResult.StatusCode.Should().Be(404);
-        var envelope = objectResult.Value.Should().BeOfType<Envelope<string>>().Which;
+        var envelope = objectResult.Value.Should().BeOfType<Envelope<object?>>().Which;
         envelope.Success.Should().BeFalse();
         envelope.Errors.Should().ContainSingle().Which.Code.Should().Be("orders.order.not-found");
         envelope.CorrelationId.Should().Be("corr-2");

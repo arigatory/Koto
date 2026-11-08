@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AwesomeAssertions;
 using Koto.Domain;
 
@@ -50,15 +51,27 @@ public class EnvelopeTests
     public void Unit_result_serializes_as_null()
     {
         JsonSerializer.Serialize(AppResult.Success().ToEnvelope(Now), Web).Should().Contain("\"result\":null");
-        JsonSerializer.Serialize(Envelope.Ok(Unit.Value, Now), Web).Should().Contain("\"result\":null");
     }
 
     [Fact]
-    public void Failed_envelope_for_struct_result_serializes_null_result()
+    public void Ok_rejects_unit_results()
     {
-        var envelope = AppResult<Guid>.Failure(new Quota(1).Enrich()).ToEnvelope(Now);
+        var act = () => Envelope.Ok(Unit.Value, Now);
 
-        JsonSerializer.Serialize(envelope, Web).Should().Contain("\"result\":null");
+        act.Should().Throw<ArgumentException>().WithMessage("*AppResult<Unit>*");
+    }
+
+    [Fact]
+    public void Fail_serializes_null_result_without_a_custom_converter()
+    {
+        JsonSerializer.Serialize(Envelope.Fail([new Quota(1).Enrich()], Now), Web).Should().Contain("\"result\":null");
+        typeof(Envelope<>).GetCustomAttributes(typeof(JsonConverterAttribute), inherit: false).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ToEnvelope_on_failure_has_null_result_for_reference_types()
+    {
+        AppResult<Dto>.Failure(new Quota(1).Enrich()).ToEnvelope(Now).Result.Should().BeNull();
     }
 
     [Fact]
@@ -72,7 +85,7 @@ public class EnvelopeTests
     [Fact]
     public void Round_trips_through_json()
     {
-        var original = Envelope.Fail<Dto>([new Quota(5).ForField("items")], Now, "c");
+        var original = Envelope.Fail([new Quota(5).ForField("items")], Now, "c");
 
         var back = JsonSerializer.Deserialize<Envelope<Dto>>(JsonSerializer.Serialize(original, Web), Web)!;
 
