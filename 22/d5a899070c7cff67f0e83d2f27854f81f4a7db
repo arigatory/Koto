@@ -1,0 +1,35 @@
+tests/Koto.Domain.Tests/ResultTests.cs
+  s_1df5dd62b768e4::t_ba08288026dfe5 8,149,172
+src/Koto.Domain/Results/ErrorCode.cs
+  s_1df5dd62b768e4::t_54cb5c7a3163fc 1-36
+tests/Koto.Domain.Tests/TestErrors.cs
+  s_1df5dd62b768e4::t_ba08288026dfe5 1-4
+tests/Koto.Domain.Tests/ResultCollectionsTests.cs
+  s_1df5dd62b768e4::t_54cb5c7a3163fc 8-9
+tests/Koto.Domain.Tests/ResultMultiErrorTests.cs
+  s_1df5dd62b768e4::t_ba08288026dfe5 8-9,152
+tests/Koto.Domain.Tests/ErrorTests.cs
+  s_1df5dd62b768e4::t_ba08288026dfe5 2,8-25,27,29,31,35,37,41,43-44,46-49,53,55,57-59,63,65-69,73,75-78,82,84-88
+src/Koto.Domain/Results/Errors.cs
+  s_1df5dd62b768e4::t_54cb5c7a3163fc 3,10-11,14-17,20-25,28-31,34-37
+tests/Koto.Domain.Tests/ErrorCodeTests.cs
+  s_1df5dd62b768e4::t_ba08288026dfe5 1-42
+src/Koto.Domain/Results/Error.cs
+  s_1df5dd62b768e4::t_54cb5c7a3163fc 4-10,12-14,16-18,20-21,23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "22d5a899070c7cff67f0e83d2f27854f81f4a7db",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
