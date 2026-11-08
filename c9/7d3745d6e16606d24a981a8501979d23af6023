@@ -1,0 +1,42 @@
+skills/koto/SKILL.md
+  s_1df5dd62b768e4::t_9cce2f7637122d 1-25,27-54,57-64
+  s_1df5dd62b768e4::t_08cb70d7616d78 26,55
+  s_1df5dd62b768e4::t_bd9475a82a7e92 56
+skills/koto/references/workflow.md
+  s_1df5dd62b768e4::t_917e76c7e671b8 1-40
+skills/koto/references/error-model.md
+  s_1df5dd62b768e4::t_62816a06a54e2f 35,172
+  s_1df5dd62b768e4::t_697ee72ccdf067 1-34,36-171,173-186
+skills/koto/references/publishing.md
+  s_1df5dd62b768e4::t_917e76c7e671b8 1-28
+skills/koto/references/widget.md
+  s_1df5dd62b768e4::t_917e76c7e671b8 1-80
+CLAUDE.md
+  s_1df5dd62b768e4::t_9a20811b24675b 13-14
+skills/koto/references/dotnet-service.md
+  s_1df5dd62b768e4::t_24c878004097c8 12,160
+  s_1df5dd62b768e4::t_917e76c7e671b8 1-11,13-23,48-82,85-86,90-159,188-236,238-254
+  s_1df5dd62b768e4::t_9538c322b6f9bd 83-84,87-89,176-177
+  s_1df5dd62b768e4::t_bd9475a82a7e92 161-163,166-175,178-187
+  s_1df5dd62b768e4::t_08cb70d7616d78 24-47,237
+  s_1df5dd62b768e4::t_a3d063cc65c519 164-165
+README.md
+  s_1df5dd62b768e4::t_ab9cfa79b9b00f 198-199,210-211
+  s_1df5dd62b768e4::t_9a20811b24675b 188-197,200-209,212-215,221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c97d3745d6e16606d24a981a8501979d23af6023",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
