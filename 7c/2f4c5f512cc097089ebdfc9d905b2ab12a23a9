@@ -1,0 +1,45 @@
+tests/Koto.Infrastructure.EFCore.Tests/Koto.Infrastructure.EFCore.Tests.csproj
+  s_1df5dd62b768e4::t_447cb449c0da72 17
+src/Directory.Build.props
+  s_1df5dd62b768e4::t_447cb449c0da72 28
+tests/Koto.Messaging.Wolverine.Postgres.Tests/Koto.Messaging.Wolverine.Postgres.Tests.csproj
+  s_1df5dd62b768e4::t_447cb449c0da72 16
+tests/Koto.Messaging.Wolverine.Postgres.Tests/PostgresProcessedMessageStoreTests.cs
+  s_1df5dd62b768e4::t_f65a24993542ff 10
+tests/Koto.EventSourcing.Marten.Tests/Koto.EventSourcing.Marten.Tests.csproj
+  s_1df5dd62b768e4::t_447cb449c0da72 16
+Directory.Build.props
+  s_1df5dd62b768e4::t_447cb449c0da72 7-9
+tests/Koto.Infrastructure.EFCore.Tests/AutoStronglyTypedIdConversionTests.cs
+  s_1df5dd62b768e4::t_f65a24993542ff 48
+tests/Koto.EventSourcing.Marten.Tests/MartenUnitOfWorkTests.cs
+  s_1df5dd62b768e4::t_f65a24993542ff 56
+tests/Koto.Infrastructure.EFCore.Tests/RepositoryTests.cs
+  s_1df5dd62b768e4::t_f65a24993542ff 47
+tests/Koto.Infrastructure.EFCore.Tests/QueryablePagingExtensionsTests.cs
+  s_1df5dd62b768e4::t_f65a24993542ff 23
+tests/Koto.Infrastructure.EFCore.Tests/ServiceCollectionExtensionsTests.cs
+  s_1df5dd62b768e4::t_f65a24993542ff 1-23
+tests/Koto.Infrastructure.EFCore.Tests/DomainEventOutboxFlowTests.cs
+  s_1df5dd62b768e4::t_93889296fb3d65 65
+src/Koto.Infrastructure.EFCore/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_93889296fb3d65 27-29
+src/Koto.EventSourcing.Marten/Koto.EventSourcing.Marten.csproj
+  s_1df5dd62b768e4::t_ca2dd46ee4d1ad 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7c2f4c5f512cc097089ebdfc9d905b2ab12a23a9",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "unknown"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
