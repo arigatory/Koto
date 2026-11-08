@@ -1,0 +1,28 @@
+tests/Koto.Domain.Tests/ResultMultiErrorTests.cs
+  s_1df5dd62b768e4::t_bee92c85b39c16 14,20,66,79,139,149,153-159
+  s_1df5dd62b768e4::t_aa861d7244b092 160
+tests/Koto.Domain.Tests/ResultTests.cs
+  s_1df5dd62b768e4::t_bee92c85b39c16 27,40,44,63,79,97,121,129,148,157,173,191,236-254
+tests/Koto.Domain.Tests/ErrorListTests.cs
+  s_1df5dd62b768e4::t_bee92c85b39c16 1-59
+src/Koto.Domain/Results/ErrorList.cs
+  s_1df5dd62b768e4::t_12bf4a0fdb838e 1-61
+src/Koto.Domain/Results/Result.cs
+  s_1df5dd62b768e4::t_12bf4a0fdb838e 4-7,10,13,21,39-40,42,44-47,49,64,70-74,76,78,87-89,106,113-114,117-118,121-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eb78e4929466c3965c0b465048b624dfc17bc839",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
