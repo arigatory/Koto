@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>Koto.Api.FastEndpoints</PackageId>
-    <Description>FastEndpoints integration for Koto: CQRS base endpoints, RFC 7807 Problem Details from Error, correlation ID middleware, and global exception handler.</Description>
-    <PackageTags>ddd;fastendpoints;cqrs;api;problem-details;microservices;dotnet</PackageTags>
+    <Description>FastEndpoints integration for Koto: CQRS base endpoints responding with the Koto Envelope, binding errors in the same envelope, correlation ID middleware, and global exception handler.</Description>
+    <PackageTags>ddd;fastendpoints;cqrs;api;envelope;microservices;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Koto.Api.AspNetCore\Koto.Api.AspNetCore.csproj" />
     <ProjectReference Include="..\Koto.Application\Koto.Application.csproj" />
+    <ProjectReference Include="..\Koto.Validation\Koto.Validation.csproj" />
   </ItemGroup>
 
 </Project>

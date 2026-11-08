@@ -93,4 +93,13 @@ public class EnvelopeTests
         AppResult<int>.Success(3).ToEnvelope(Now, "c").Result.Should().Be(3);
         AppResult<int>.Failure(new Quota(1).Enrich()).ToEnvelope(Now).Errors.Should().ContainSingle();
     }
+
+    [Fact]
+    public void Field_is_camel_cased_per_segment_on_the_wire()
+    {
+        var envelope = Envelope.Fail([new Quota(1).ForField("Items[0].Name"), new Quota(1).ForField("Email")], Now);
+
+        envelope.Errors[0].Field.Should().Be("items[0].name");
+        envelope.Errors[1].Field.Should().Be("email");
+    }
 }

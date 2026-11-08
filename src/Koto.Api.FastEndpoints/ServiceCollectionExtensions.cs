@@ -1,7 +1,9 @@
 using Koto.Api.AspNetCore;
 using Koto.Api.FastEndpoints.Middleware;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Koto.Api.FastEndpoints;
 
@@ -9,36 +11,35 @@ namespace Koto.Api.FastEndpoints;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers Koto API services: the Error → HTTP status registry
-    /// (<see cref="KotoHttpErrorOptions"/>), correlation ID middleware, accessor,
-    /// and global exception handler.
+    /// Registers Koto API services: <see cref="KotoApiOptions"/> (error → status classifier),
+    /// the envelope time provider, the enrichment guard, correlation ID middleware and accessor,
+    /// and the global exception handler.
     /// </summary>
     /// <remarks>
-    /// Also call <c>app.UseKotoApi()</c> to add the middleware to the pipeline, and
-    /// <c>app.UseFastEndpoints()</c> to register FastEndpoints routes.
+    /// Also call <c>app.UseKotoApi()</c> to add the middleware to the pipeline and
+    /// <c>app.UseKotoFastEndpoints()</c> to map endpoints with envelope error responses.
     /// </remarks>
     /// <param name="services">The service collection.</param>
-    /// <param name="configureErrors">Optional Error → HTTP status customization, e.g. <c>o =&gt; o.Map("payments.gateway-failed", 502)</c>.</param>
+    /// <param name="configureErrors">Optional error → HTTP status customization, e.g. <c>o =&gt; o.Map("payments.gateway.failed", 502)</c>.</param>
     public static IServiceCollection AddKotoApi(
         this IServiceCollection services,
-        Action<KotoHttpErrorOptions>? configureErrors = null)
+        Action<KotoApiOptions>? configureErrors = null)
     {
         services.AddKotoAspNetCore(configureErrors);
         services.AddSingleton<CorrelationIdMiddleware>();
         services.AddSingleton<ICorrelationIdAccessor, CorrelationIdAccessor>();
-        services.AddExceptionHandler<GlobalExceptionHandler>();
-        services.AddProblemDetails();
+        services.TryAddSingleton<GlobalExceptionHandler>();
         return services;
     }
 
     /// <summary>
-    /// Adds <see cref="CorrelationIdMiddleware"/> and <c>UseExceptionHandler</c> to the pipeline.
-    /// Call this before <c>app.UseFastEndpoints()</c>.
+    /// Adds <see cref="CorrelationIdMiddleware"/> and the exception handler (500 envelope via
+    /// <see cref="GlobalExceptionHandler"/>) to the pipeline. Call this before <c>app.UseKotoFastEndpoints()</c>.
     /// </summary>
     public static IApplicationBuilder UseKotoApi(this IApplicationBuilder app)
     {
         app.UseMiddleware<CorrelationIdMiddleware>();
-        app.UseExceptionHandler();
+        app.UseExceptionHandler(new ExceptionHandlerOptions { ExceptionHandler = GlobalExceptionHandler.HandleAsync });
         return app;
     }
 }

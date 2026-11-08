@@ -19,7 +19,7 @@ public static class ResultActionResultExtensions
         var envelope = result.ToEnvelope(httpContext.GetKotoTimeProvider().GetUtcNow(), correlationId);
         return result.IsSuccess
             ? envelope
-            : new ObjectResult(envelope) { StatusCode = ResultHttpResultExtensions.StatusFor(result, httpContext) };
+            : new ObjectResult(envelope) { StatusCode = result.ResolveStatusCode(httpContext) };
     }
 
     /// <summary>Maps a void result to an envelope whose result is <c>null</c>.</summary>
@@ -31,7 +31,7 @@ public static class ResultActionResultExtensions
         var envelope = result.ToEnvelope(httpContext.GetKotoTimeProvider().GetUtcNow(), correlationId);
         return result.IsSuccess
             ? envelope
-            : new ObjectResult(envelope) { StatusCode = ResultHttpResultExtensions.StatusFor(result, httpContext) };
+            : new ObjectResult(envelope) { StatusCode = result.ResolveStatusCode(httpContext) };
     }
 
     /// <summary>Awaits a dispatch and maps the result — <c>(await dispatcher.SendAsync(cmd, ct)).ToActionResult(this)</c>.</summary>
