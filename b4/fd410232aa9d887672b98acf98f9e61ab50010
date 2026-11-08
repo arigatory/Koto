@@ -1,0 +1,46 @@
+src/Koto.Api.AspNetCore/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 2,10-12,15,18,20,23-24
+tests/Koto.Api.AspNetCore.Tests/TestError.cs
+  s_1df5dd62b768e4::t_e36a9ca15c19c9 1-14
+tests/Koto.Api.AspNetCore.Tests/KotoApiOptionsTests.cs
+  s_1df5dd62b768e4::t_e36a9ca15c19c9 1-83
+src/Koto.Api.AspNetCore/EnrichmentGuard.cs
+  s_1df5dd62b768e4::t_b50e1cb7efe3b3 27
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 1-26,28-99
+src/Koto.Api.AspNetCore/KotoApiOptions.cs
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 1-95
+src/Koto.Api.AspNetCore/Results/ResultActionResultExtensions.cs
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 1,8-9,13-14,18-19,21-22,25-26,30-31,33-34,38-39,46-48
+src/Koto.Api.AspNetCore/Results/ResultHttpResultExtensions.cs
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 1,8-10,14-15,19-20,23-24,28-29,34,41,43,50,52-55
+tests/Koto.Api.AspNetCore.Tests/EnrichmentGuardTests.cs
+  s_1df5dd62b768e4::t_e36a9ca15c19c9 1-42,44-101,103-108
+  s_1df5dd62b768e4::t_b50e1cb7efe3b3 43,102
+tests/Koto.Api.AspNetCore.Tests/ResultMappingTests.cs
+  s_1df5dd62b768e4::t_b50e1cb7efe3b3 69,71
+  s_1df5dd62b768e4::t_e36a9ca15c19c9 2,15-17,20,25,31,33-41,45,47,49-52,56,58,60-63,74,78,80,82,84-86,92,96,102,104,106-108,112,114,116-117,121,123,127-130,136,138,140
+src/Koto.Api.AspNetCore/KotoHttpContextExtensions.cs
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 1-30
+src/Koto.Api.AspNetCore/ServerError.cs
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 1-6
+tests/Koto.Api.AspNetCore.Tests/ServiceCollectionExtensionsTests.cs
+  s_1df5dd62b768e4::t_e36a9ca15c19c9 1-38
+src/Koto.Api.AspNetCore/Koto.Api.AspNetCore.csproj
+  s_1df5dd62b768e4::t_5f962d0dc99cc2 6-7,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b4fd410232aa9d887672b98acf98f9e61ab50010",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
