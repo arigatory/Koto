@@ -1,5 +1,7 @@
 # Koto.Validation — Plan
 
+> **Обновление v0.5.0-preview.1 (ADR-026, спека [16](16-error-model-envelope.md)):** `ValidationBehavior` закрывается над `AppResult<T>` и отдаёт `EnrichedError` с `Field`; обычные правила → `ValidationRuleFailed`; `AddValidationBehavior()` на опциях задаёт позицию в цепочке; валидаторы последовательны; `MustBeEntity`/`NotEmptyWithKotoError`/`LengthWithKotoError` удалены. Актуальное API — README пакета.
+
 **Phase:** 1 | **Status:** DONE
 **Depends on:** Koto.Domain + Koto.Application + FluentValidation v12 (`[12.0.0,13.0.0)`, Apache 2.0)
 

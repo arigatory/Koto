@@ -7,6 +7,53 @@
 
 ## История релизов
 
+- **v0.5.0-preview.1** — **новая модель ошибок и конверт ответа** ([ADR-026](adr/ADR-026-error-model-and-envelope.md),
+  спека [docs/packages/16](docs/packages/16-error-model-envelope.md)). Цель: отказ едет как значение от агрегата
+  до клиента по одному рельсу, все ошибки доходят, у каждой есть типизированные `details`, формат ответа один на
+  HTTP/SignalR/Kafka. **Breaking changes / migration notes:**
+  1. **`Error` абстрактный.** Каждый `new Error("code", "msg")` → record в каталоге:
+     `public sealed record OtpExpired(DateTimeOffset At) : Error("identity.otp.expired", "…");` — свойства record
+     это гарантированные данные (`details`). Коды — не меньше трёх kebab-case сегментов, валидируются при создании;
+     тест `ErrorCatalog.ShouldBeValid(asm)` (Koto.Testing) проверяет формат и уникальность.
+  2. **`Errors.General.X(...)` → `new Errors.General.X(...)`**; коды стали трёхсегментными:
+     `general.value.invalid-length`, `general.entity.not-found`, `general.collection.too-small`, `general.collection.too-large`.
+  3. **`Result<T>.Error` → `FirstError`**; проброс `return x.Error;` → `return x.Errors;` (`ErrorList<Error>`
+     неявно конвертируется в `Result<T>`). `TapError` удалён (`TapErrors`), `Match`/`MatchAsync` получают весь список,
+     `IResultFactory` удалён.
+  4. **Хендлеры и диспетчер возвращают `AppResult<T>`** (`Task<AppResult<TResult>>`). `Error.Field` переехал в
+     `EnrichedError` (Koto.Application). Из хендлера доменный `Result<T>` выходит одним из трёх глаголов:
+     `return x.Errors.ForField(nameof(cmd.Email));` / `return x.Errors.Enrich();` /
+     `return x.Errors.Enrich(e => e is MeetupFull f ? new MeetupFullWithAlternative(f, alt.Id) : e.Enrich());`.
+     Успех — как раньше: `return dto;`. Ошибки Application-слоя — тоже record'ы (`EmailTaken(Email, ExistingUserId)`).
+  5. **`AddKotoApplication` падает при старте**, если у команды/запроса из сканируемых сборок нет хендлера или их
+     несколько (`o.ValidateHandlers = false` — отключить).
+  6. **Валидация:** `AddKotoApplication(o => o.AddLoggingBehavior().AddValidationBehavior().AddTransactionBehavior(), asm)`
+     + `AddKotoValidation(asm)` — порядок Logging → Validation → Transaction теперь выразим. Валидаторы выполняются
+     последовательно. `MustBeEntity`, `NotEmptyWithKotoError`, `LengthWithKotoError` удалены; обычные FV-правила
+     дают `validation.rule.failed` с `details.rule`.
+  7. **HTTP: ProblemDetails → `Envelope<T>`:** `{ success, result, errors: [{ code, message, field, details }],
+     correlationId, timestamp }`. Успех тоже в конверте (200), void-команды — 200 с `result: null` (было 204),
+     `field` в camelCase. `KotoHttpErrorOptions` → `KotoApiOptions` (`MapSuffix`/`MapPrefix` удалены, остались
+     `Map(code, status)` и `Map(rule)`; при нескольких ошибках статус задаёт первая). `KotoProblemDetails` удалён.
+     `ToHttpResult`/`ToActionResult` принимают только `AppResult<T>`. `EnrichmentGuard` (Development: исключение)
+     ловит забытый более полный тип ошибки.
+  8. **FastEndpoints:** `app.UseFastEndpoints()` → `app.UseKotoFastEndpoints()` (ошибки биндинга тоже в конверте);
+     базовые эндпоинты объявляют `Envelope<TResult>` как response type; `SendCommandAsync`/`SendQueryAsync` удалены.
+     `UseKotoApi()` сам настраивает exception handler (без `AddProblemDetails`).
+  9. **Клиенты** (landing `api.ts`, `WalletClient`, мобилка RBG): читать `errors[].code / message / field / details`;
+     `errorCode`, `errorCodes`, `detail`, `title`, `status` в теле больше нет.
+  10. **`Koto.Infrastructure.Http`:** `ServiceHttpClient.ReadResultAsync` разворачивает конверт соседнего сервиса в
+      `Result<T>` с `RemoteError`; fallback-коды `general.resource.not-found`, `general.resource.conflict`,
+      `general.request.invalid`, `general.server.unexpected`, `general.server.http-error`.
+  11. **`Koto.Infrastructure.EFCore`:** `EfCoreUnitOfWork.CommitAsync` бросает, если агрегаты подняли события,
+      а outbox не зарегистрирован (раньше терял молча). `ISpecification`/`Specification`/`SpecificationEvaluator`
+      удалены. `AddKotoEFCore` регистрирует `KotoDbContext` → `IRepository<,>` из DI наконец резолвится.
+  12. **`Koto.Testing`:** `Should()` для `AppResult<T>` (+ `HaveErrorForField`), `ErrorCatalog.Scan/ShouldBeValid`.
+  13. Удалены: `IDomainService`, `IResultFactory`, `TapError`, `Specification*`, `MustBeEntity`,
+      `NotEmptyWithKotoError`, `LengthWithKotoError`, `KotoProblemDetails`, `KotoHttpErrorOptions`.
+  Сборка: Marten 9.58 (critical advisory), Testcontainers 4.16, явный SourceLink убран (даёт SDK); NU1903/NU1904
+  валят сборку, NU1901/NU1902 — предупреждения.
+
 - **v0.4.0** — **первый стабильный релиз** (сведение обкатки на Real Board Games, RBG фазы 0–8):
   все 14 пакетов выходят без суффикса preview; API заморожен по состоянию preview.15, breaking
   изменений нет. EF Core выровнен до 10.0.10. Установка теперь без `--prerelease`.

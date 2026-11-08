@@ -4,7 +4,8 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 Референс-потребитель: **agent-server** (`/Users/ivan/source/sk-agent-demo/koto-agent/apps/agent-server`) — реальный wiring всех слоёв (Domain/Application/Validation/EFCore/FastEndpoints/Observability) через PackageReference.
 
 ## Текущий статус
-- Все **12 пакетов** собраны и опубликованы на nuget.org (профиль `arigatory`), версия `0.3.0-preview.x`.
+- Все **14 пакетов** опубликованы на nuget.org (профиль `arigatory`); стабильная `0.4.0`, в работе `0.5.0-preview.1`
+  (новая модель ошибок и конверт ответа — ADR-026, `docs/packages/16-error-model-envelope.md`).
 - Релиз: bump `<Version>` в `src/Directory.Build.props` → тег `vX.Y.Z` → push → CI `publish.yml` пакует (версия из тега) и пушит все пакеты на nuget.org.
 - Шаблоны (`Koto.Templates`, Phase 5) — НЕ начаты; новые сервисы скаффолдятся вручную.
 - Детальный индекс фаз: `PLAN.md`
@@ -14,7 +15,7 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Messaging: **Wolverine** + WolverineFx.Kafka
 - Event Sourcing: **Marten** (PostgreSQL)
 - ORM: **EF Core 10**
-- API: **FastEndpoints** + **Koto.Api.AspNetCore** (транспорт-независимый Result→HTTP: Minimal API, MVC)
+- API: **FastEndpoints** + **Koto.Api.AspNetCore** (`AppResult<T>` → `Envelope<T>`: Minimal API, MVC, FastEndpoints)
 - Observability: Serilog + OpenTelemetry .NET
 - Validation: FluentValidation **v12** (диапазон `[12.0.0,13.0.0)`, Apache 2.0)
 - Testing: xUnit + NSubstitute + AwesomeAssertions + Testcontainers.NET
@@ -30,19 +31,24 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Интерфейс `IRepository` живёт в **Koto.Application** (не в Domain), рядом с `IUnitOfWork`:
   порт принадлежит слою потребителя (хендлерам); домен — только сущности/VO/события/Result.
 - Pipeline behaviors — opt-in через `KotoApplicationOptions`:
-  `AddKotoApplication(o => o.AddLoggingBehavior().AddTransactionBehavior(), asm)`.
-  Порядок регистрации = порядок исполнения; рекомендуемый: Logging → Validation → Transaction.
+  `AddKotoApplication(o => o.AddLoggingBehavior().AddValidationBehavior().AddTransactionBehavior(), asm)` + `AddKotoValidation(asm)`.
+  Порядок регистрации = порядок исполнения (Logging → Validation → Transaction).
   Behaviors регистрируются как open generic и закрываются по **конкретному** типу команды/запроса.
+  `AddKotoApplication` падает при старте, если у команды/запроса нет хендлера (или их несколько).
 
-### Result и Error
-- `Result<T>` — собственная реализация (вдохновлена Khorikovым), без внешних зависимостей.
-- Multi-error: `Result<T>.Errors` несёт все ошибки (`Failure(IEnumerable<Error>)`), `Error` — первая.
-- Статический компаньон `Result`: `Success()` / `Failure(...)` для void-потоков (`Result<Unit>`)
-  и `Result.Combine(...)` — агрегация нескольких результатов (все ошибки, не первая).
-- `Error` = `record(string Code, string Message)` + опциональный `Field` (имя поля для
-  validation problem details; заполняет application-слой). Код: `"general.value.is-required"`, `"orders.order.not-found"`.
-- Нет `Maybe<T>` — используем C# nullable (`T?`, `??`, `?.`).
-- Нет `ErrorType` enum — смысл несёт код.
+### Result, Error, AppResult, Envelope (v0.5, ADR-026)
+- Три слоя: домен возвращает `Result<T>` (ошибки `Error`), хендлеры — `AppResult<T>` (ошибки `EnrichedError`),
+  API отдаёт `Envelope<T>` `{ success, result, errors[{code,message,field,details}], correlationId, timestamp }`.
+  Неявной конверсии `Result<T>` → `AppResult<T>` нет: `return x.Errors.ForField("email")` / `.Enrich()` / `.Enrich(map)`.
+- `Error` **абстрактный**: каждая ошибка — record из каталога (`sealed record OtpExpired(DateTimeOffset At) : Error("identity.otp.expired", "…")`),
+  свойства record = гарантированные `details`. Код ≥3 kebab-case сегментов, валидируется при создании.
+  Общие: `new Errors.General.NotFound("order", id)`, `ValueIsRequired()`, `InvalidLength(min, max)`.
+- Проброс всех ошибок: `return x.Errors;` (`ErrorList` неявно → результат). Первая ошибка — `FirstError`
+  (заголовок, статус), пробрасывать её нельзя.
+- `Result.Combine(...)`, `Result.Sequence/Traverse` собирают все ошибки; `Result.Success()/Failure()` для void.
+- HTTP-статус — грубый класс (`*.not-found` 404, `*.already-*` 409, `general.*`/с полем 400, иначе 422), при нескольких
+  ошибках решает первая; `KotoApiOptions.Map(...)` для исключений. Исключения — только для неожиданного (500).
+- Нет `Maybe<T>` — используем C# nullable (`T?`, `??`, `?.`). Нет `ErrorType` enum — смысл несёт код.
 
 ### События
 - `IDomainEvent` — внутренний, меняется свободно, никогда не выходит за пределы сервиса.

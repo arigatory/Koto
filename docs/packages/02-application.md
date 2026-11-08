@@ -1,5 +1,7 @@
 # Koto.Application — Plan
 
+> **Обновление v0.5.0-preview.1 (ADR-026, спека [16](16-error-model-envelope.md)):** хендлеры и диспетчер возвращают `AppResult<T>`; `EnrichedError` + глаголы `ForField`/`Enrich`; `Envelope<T>` как транспорт-независимый DTO; `ValidateHandlers` (fail-fast при старте); `KotoApplicationAssemblies`. Актуальное API — README пакета.
+
 **Phase:** 1 | **Status:** DONE
 **Depends on:** Koto.Domain only
 

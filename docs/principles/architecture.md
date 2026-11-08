@@ -104,24 +104,23 @@ YourService/
 - **Domain** — не знает об Application, Infrastructure, API. Чистый C#.
 - **Application** — знает только о Domain. Никаких `using EntityFrameworkCore`, `using Kafka` и т.д.
 - **Infrastructure** — реализует интерфейсы из Domain и Application. Знает об EF Core, Wolverine, HttpClient.
-- **API** — знает об Application (диспатчит команды/запросы). Не знает об Infrastructure напрямую.
+- **API** — знает об Application (диспатчит команды/запросы, принимает только `AppResult<T>`). Не знает об Infrastructure напрямую.
 
 ## Поток данных
 
 ```
 HTTP Request
-  → FastEndpoints Endpoint
-    → ICqrsDispatcher.SendAsync(command)
+  → FastEndpoints Endpoint (CommandEndpoint<TCommand, TResult>)
+    → ICqrsDispatcher.SendAsync(command)             // behaviors: Logging → Validation → Transaction
       → CommandHandler (Application)
-        → IRepository.GetByIdAsync (Domain interface)
+        → IRepository.GetByIdAsync (Application port)
           → EF Core Repository (Infrastructure impl)
-        → aggregate.DoSomething()
-          → AddDomainEvent(new SomethingHappenedEvent())
+        → aggregate.DoSomething()                     // Result<T>, Error из каталога
+          → AddDomainEvent(new SomethingHappenedDomainEvent())
         → IRepository.Add(aggregate)
-        → DbContext.SaveChangesAsync()
-          → Wolverine Outbox: {data + event} → one commit
-  ← Result<T>
-  ← HTTP Response (200 / ProblemDetails)
+        → IUnitOfWork.CommitAsync()                   // TransactionBehavior; outbox в той же транзакции
+      ← AppResult<T>                                   // Errors: EnrichedError (ForField / Enrich)
+  ← Envelope<T> + HTTP-статус из KotoApiOptions        // { success, result, errors[], correlationId, timestamp }
 
 Wolverine (async, from outbox):
   → SomethingHappenedHandler

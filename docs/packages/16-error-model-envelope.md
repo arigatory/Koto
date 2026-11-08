@@ -1,6 +1,6 @@
 # 16 — Модель ошибок и конверт ответа (v0.5.0-preview.1)
 
-Статус: **в работе**. Решения зафиксированы в [ADR-026](../../adr/ADR-026-error-model-and-envelope.md);
+Статус: **реализовано в v0.5.0-preview.1** (ветка `feat/v0.5-error-model-envelope`). Решения зафиксированы в [ADR-026](../../adr/ADR-026-error-model-and-envelope.md);
 ревизии [ADR-002](../../adr/ADR-002-own-result-implementation.md), [ADR-003](../../adr/ADR-003-error-type-design.md),
 [ADR-020](../../adr/ADR-020-api-aspnetcore-error-mapping.md) (superseded).
 

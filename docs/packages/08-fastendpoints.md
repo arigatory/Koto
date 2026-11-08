@@ -1,5 +1,7 @@
 # Koto.Api.FastEndpoints — Plan
 
+> **Обновление v0.5.0-preview.1 (ADR-026, спека [16](16-error-model-envelope.md)):** эндпоинты отвечают `Envelope<TResult>` (void — `Envelope<object?>`), `UseKotoFastEndpoints()` переводит ошибки биндинга в конверт, `GlobalExceptionHandler` пишет конверт с 500; `SendCommandAsync`/`SendQueryAsync` удалены. Актуальное API — README пакета.
+
 **Phase:** 3 | **Status:** DONE (mapped endpoints + claims helper — v0.2.0-preview.1)
 **Depends on:** Koto.Application + **Koto.Api.AspNetCore** + FastEndpoints (MIT)
 

@@ -81,6 +81,10 @@ public async Task<Result<OrderId>> HandleAsync(PlaceOrderCommand cmd, Cancellati
 }
 ```
 
+If aggregates raised domain events and no Wolverine outbox (`IDbContextOutbox`) is registered,
+`CommitAsync` **throws** instead of saving and dropping the events silently — configure Wolverine
+or register your own `IUnitOfWork` that dispatches them.
+
 ### 3 — Use a repository
 
 ```csharp
@@ -101,4 +105,4 @@ var page = await context.Orders
     .ToPagedListAsync(page: 1, pageSize: 20, ct);
 ```
 
-Запрос должен быть упорядочен — иначе порядок страниц не определён.
+The query must be ordered (`OrderBy`), otherwise page boundaries are undefined.

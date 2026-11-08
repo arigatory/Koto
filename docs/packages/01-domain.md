@@ -1,5 +1,7 @@
 # Koto.Domain — Plan
 
+> **Обновление v0.5.0-preview.1 (ADR-026, спека [16](16-error-model-envelope.md)):** `Error` абстрактный (каталог record-типов, `ErrorCode`), `Errors.General.*` — nested record'ы с трёхсегментными кодами, `Result<T>.Errors : ErrorList<Error>` с неявной конверсией, `Error` → `FirstError`, `IResultFactory`/`IDomainService` удалены. Актуальное API — README пакета.
+
 **Phase:** 1 | **Status:** DONE
 **Depends on:** nothing (zero external dependencies)
 

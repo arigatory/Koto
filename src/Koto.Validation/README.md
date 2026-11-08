@@ -1,6 +1,7 @@
 # Koto.Validation
 
-FluentValidation extensions and a CQRS pipeline behavior for the [Koto](https://github.com/arigatory/Koto) suite.
+FluentValidation extensions and the validation pipeline behavior for the
+[Koto](https://github.com/arigatory/Koto) suite.
 
 > Uses **FluentValidation v12** (Apache 2.0 on all versions), pinned to `[12.0.0,13.0.0)`.
 
@@ -14,24 +15,26 @@ dotnet add package Koto.Validation
 
 | Type | Purpose |
 |---|---|
-| `KotoValidators.MustBeValueObject<T, TSource, TValueObject>` | Validates a property by calling a domain factory (`Func<TSource, Result<TVO>>`) — any source type: `string`, `int`, `Guid`, … |
-| `KotoValidators.MustBeEntity<T, TElement, TEntity>` | Same contract for entity factories (reads naturally for entities) |
-| `KotoValidators.ListMustContainNumberOfItems` | Min/max count rule for collections |
-| `KotoValidators.NotEmptyWithKotoError` / `LengthWithKotoError` | Built-in rules carrying `Errors.General` codes |
-| `ValidationBehavior<TRequest, TResponse>` | Pipeline middleware — runs all validators (async-capable) before the handler |
-| `ServiceCollectionExtensions.AddKotoValidation` | Registers the behavior and scans assemblies for validators |
+| `KotoValidators.MustBeValueObject<T, TSource, TValueObject>` | Validates a property by calling a domain factory (`Func<TSource, Result<TVO>>`) — any source type |
+| `KotoValidators.ListMustContainNumberOfItems` | Min/max count rule with `Errors.General.CollectionIsTooSmall/Large` |
+| `ValidationBehavior<TRequest, TResponse>` | Runs all validators for the request **sequentially** before the handler |
+| `ValidationRuleFailed` | The error for rules not backed by a domain factory (`validation.rule.failed`, `details.rule` = the rule's code) |
+| `AddValidationBehavior()` | Puts the behavior at an explicit position in `KotoApplicationOptions` |
+| `AddKotoValidation(assemblies)` | Scans `IValidator<T>` implementations (registers the behavior if it was not added through the options) |
 
-## Usage
-
-### Register
+## Register
 
 ```csharp
-builder.Services.AddKotoValidation(typeof(Program).Assembly);
-// Registers ValidationBehavior<,> as an open generic and scans for IValidator<T> —
-// no extra registration needed. Recommended behavior order: Logging → Validation → Transaction.
+builder.Services.AddKotoApplication(
+    o => o.AddLoggingBehavior().AddValidationBehavior().AddTransactionBehavior(),  // Logging → Validation → Transaction
+    typeof(PlaceOrderHandler).Assembly);
+builder.Services.AddKotoValidation(typeof(PlaceOrderValidator).Assembly);
 ```
 
-### Write a validator — one source of truth
+With this order a validation failure never opens a transaction. Calling `AddKotoValidation` alone
+still works — the behavior is then appended after the behaviors configured in the options.
+
+## Write a validator — one source of truth
 
 The validation logic lives in the domain factory; the validator only calls it:
 
@@ -43,21 +46,23 @@ public sealed class PlaceOrderValidator : AbstractValidator<PlaceOrderCommand>
         RuleFor(x => x.Email).MustBeValueObject(Email.Create);      // string source
         RuleFor(x => x.Quantity).MustBeValueObject(Quantity.Create); // int source — any type works
         RuleFor(x => x.Items).ListMustContainNumberOfItems(1, 100);
-        RuleFor(x => x.CustomerId).NotEmpty();
+        RuleFor(x => x.CustomerId).NotEmpty();                       // plain FluentValidation rule
     }
 }
 ```
 
-Validators are keyed by the **concrete** command type and discovered by the pipeline
-automatically (the dispatcher closes `ValidationBehavior<,>` over `PlaceOrderCommand`).
+Validators are keyed by the **concrete** command type and discovered by the pipeline automatically.
 
-### Structured errors
+## What the handler never sees, and what the client gets
 
-Each domain `Error` travels as structured state — `ValidationFailure.CustomState` +
-`ErrorCode` — not as a serialized message string. On failure, `ValidationBehavior`
-returns a `Result` carrying **one `Error` per validation failure**, each with its real
-`Code`, `Message`, and `Field` (the property name). Nothing is collapsed into a single
-string; HTTP layers can render RFC 7807 validation problem details per field
-(see `Koto.Api.AspNetCore`).
+On failure the behavior returns an `AppResult` carrying **one `EnrichedError` per failure**, each
+bound to its field:
 
-Async rules (`MustAsync`, `CustomAsync`) are fully supported — the behavior calls `ValidateAsync`.
+- a `MustBeValueObject` failure keeps the domain error — `general.value.is-required`,
+  `identity.email.invalid`, … — with its record properties as `details`;
+- any other rule (`NotEmpty()`, `Length()`, `MustAsync()`) becomes `validation.rule.failed` with
+  `details.rule` set to the rule's error code (`NotEmptyValidator` or your `WithErrorCode` value).
+
+Nothing is collapsed into a string; the API layer renders every error inside the response envelope.
+
+Validators run one after another, so async rules may share scoped services such as a DbContext.

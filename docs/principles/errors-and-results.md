@@ -1,191 +1,119 @@
-# Error и Result — Соглашения Koto
+# Error и Result — соглашения Koto (v0.5)
 
-## Error
+Решения: [ADR-026](../../adr/ADR-026-error-model-and-envelope.md), спека [16](../packages/16-error-model-envelope.md).
+
+## Три слоя, два результата, один конверт
+
+| Слой | Возвращает | Ошибки |
+|---|---|---|
+| Domain | `Result<T>` | `Error` — record из каталога |
+| Application (хендлеры, диспетчер) | `AppResult<T>` | `EnrichedError` |
+| API / транспорт | `Envelope<T>` | `EnvelopeError`: `code`, `message`, `field`, `details` |
+
+Неявной конверсии `Result<T>` → `AppResult<T>` нет. Исключения между слоями не летают: отказ едет как значение.
+
+## Error — абстрактный record, каталог — типы
 
 ```csharp
-public sealed record Error(string Code, string Message)
+public abstract record Error(string Code, string Message);   // Koto.Domain
+
+// Identity.Domain/Errors/OtpErrors.cs
+public sealed record OtpExpired(DateTimeOffset ExpiredAt)
+    : Error("identity.otp.expired", "Код истёк.");
+public sealed record OtpTooManyAttempts(int RetryAfterSeconds)
+    : Error("identity.otp.too-many-attempts", "Слишком много попыток.");
+```
+
+- `new Error("…", "…")` невозможен. Record определяется в слое, который обнаружил условие: домен, Application, инфраструктура.
+- Свойства record — **гарантированные данные** ошибки; на проводе они становятся `details` (`{ "retryAfterSeconds": 42 }`).
+- Код валидируется при создании: `^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*){2,}$` — не меньше трёх kebab-case сегментов, `контекст.сущность.проблема`.
+- Общие ошибки — `new Errors.General.ValueIsRequired()`, `InvalidLength(min, max)`, `NotFound(entity, id)`, `CollectionIsTooSmall(min, actual)`, `CollectionIsTooLarge(max, actual)`; коды `general.value.is-required`, `general.value.invalid-length`, `general.entity.not-found`, `general.collection.too-small`, `general.collection.too-large`.
+- Каталог проверяется тестом: `ErrorCatalog.ShouldBeValid(typeof(Order).Assembly)` из `Koto.Testing` — формат кодов, уникальность, конструируемость.
+
+## Result\<T\> (домен)
+
+```csharp
+public sealed class Result<T> : IResultBase
 {
-    // Имя поля/свойства, к которому относится ошибка. Заполняет application-слой
-    // (validation pipeline); доменные фабрики обычно оставляют null.
-    // Используется HTTP-слоем для validation problem details.
-    public string? Field { get; init; }
+    bool IsSuccess; bool IsFailure;
+    T Value;                       // бросает на failure
+    ErrorList<Error> Errors;      // все ошибки; пустой на success
+    Error FirstError;             // заголовок отказа; бросает на success
+    // Success / Failure(Error) / Failure(IEnumerable<Error>) / Failure(ErrorList<Error>)
+    // Map, Bind, Tap, TapErrors, Ensure, Match(onSuccess, onFailure: ErrorList), async-версии
+}
+public static class Result { Success(); Failure(...); Combine(...); Sequence(...); Traverse(...); }
+```
+
+Неявные конверсии: `T → Result<T>`, `Error → Result<T>`, `ErrorList<Error> → Result<T>`. Поэтому проброс пишется так:
+
+```csharp
+var email = Email.Create(value);
+if (email.IsFailure) return email.Errors;      // все ошибки
+// return email.FirstError; — так НЕ пробрасывают: из N ошибок уедет одна
+```
+
+## EnrichedError и три глагола (Application)
+
+```csharp
+public record EnrichedError(Error Inner) : Error(Inner.Code, Inner.Message)
+{
+    string? Field { get; init; }                                 // поле запроса
+    IReadOnlyDictionary<string, object?> Details { get; init; }  // необязательные дополнения
 }
 ```
 
-> `Serialize()` удалён в v0.3.0 — это был транспортный хак для FluentValidation v7.
-> Структурный `Error` теперь передаётся через `ValidationFailure.CustomState` (см. ревизию ADR-009).
-
-### Формат кода ошибки
-
-```
-{сервис-или-general}.{сущность-или-раздел}.{описание}
-```
-
-Примеры:
-```
-general.value.is-required
-general.value.invalid-length
-general.entity.not-found
-orders.order.already-cancelled
-orders.order-item.quantity-exceeds-stock
-payments.charge.insufficient-funds
-```
-
-- Все части в kebab-case, точка как разделитель уровней.
-- `general.*` — ошибки, которые может использовать любой сервис (определены в `Errors.General`).
-- `{сервис}.*` — доменные ошибки конкретного сервиса, определяются рядом с доменом этого сервиса.
-
-### Errors.General
+Домен не знает ни `Field`, ни `Details`. Из хендлера доменная ошибка выходит одним из трёх явных глаголов:
 
 ```csharp
-public static class Errors
-{
-    public static class General
-    {
-        public static Error ValueIsRequired(string? field = null) =>
-            new("general.value.is-required", field is null
-                ? "Value is required."
-                : $"'{field}' is required.");
-
-        public static Error InvalidLength(int min, int max, string? field = null) =>
-            new("general.value.invalid-length",
-                $"Length must be between {min} and {max}.");
-
-        public static Error NotFound(string field, object? id = null) =>
-            new("general.entity.not-found", id is null
-                ? $"'{field}' was not found."
-                : $"'{field}' with id '{id}' was not found.");
-
-        public static Error CollectionIsTooSmall(int min, int actual) =>
-            new("general.collection.too-small",
-                $"Collection must contain at least {min} items. Actual: {actual}.");
-
-        public static Error CollectionIsTooLarge(int max, int actual) =>
-            new("general.collection.too-large",
-                $"Collection must contain at most {max} items. Actual: {actual}.");
-    }
-}
+if (email.IsFailure)   return email.Errors.ForField(nameof(cmd.Email));   // привязать к полю
+if (debit.IsFailure)   return debit.Errors.Enrich();                       // добавить нечего (сказано явно)
+if (joined.IsFailure)  return joined.Errors.Enrich(e => e is MeetupFull f  // более полный типизированный record
+                            ? new MeetupFullWithAlternative(f, alternative.Id)
+                            : e.Enrich());
 ```
 
-## Result\<T\>
-
-Собственная реализация, без внешних зависимостей. Вдохновлена Khorikov.
-С v0.3.0 — multi-error: failure несёт одну или несколько ошибок.
+Гарантированные данные из базы — тоже свойства record, но уже Application-слоя:
 
 ```csharp
-public sealed class Result<T> : IResultBase, IResultFactory<Result<T>>
-{
-    public bool IsSuccess { get; }
-    public bool IsFailure => !IsSuccess;
-    public T Value { get; }                     // throws if IsFailure
-    public Error Error { get; }                 // первая ошибка; throws if IsSuccess
-    public IReadOnlyList<Error> Errors { get; } // все ошибки; пустой список на success
-
-    // Фабрики (null-guards: Success(null) и Failure(пустая коллекция) бросают):
-    public static Result<T> Success(T value);
-    public static Result<T> Failure(Error error);
-    public static Result<T> Failure(IEnumerable<Error> errors);
-
-    // Функциональная композиция (Map/Bind пропагируют ВСЕ ошибки):
-    public Result<TNew> Map<TNew>(Func<T, TNew> map);
-    public Result<TNew> Bind<TNew>(Func<T, Result<TNew>> bind);
-    public Result<T> Tap(Action<T> action);
-    public Result<T> TapError(Action<Error> action);          // первая ошибка
-    public Result<T> TapErrors(Action<IReadOnlyList<Error>>); // все ошибки
-    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<Error, TResult> onFailure);
-    public Task<TResult> MatchAsync<TResult>(...);            // async success + async/sync failure
-    public Result<T> Ensure(Func<T, bool> predicate, Error error);
-
-    // Async overloads для всех методов выше
-}
-
-// Статический компаньон для void-потоков и агрегации:
-public static class Result
-{
-    public static Result<Unit> Success();
-    public static Result<Unit> Failure(Error error);
-    public static Result<Unit> Failure(IEnumerable<Error> errors);
-
-    // Combine собирает ВСЕ ошибки (не первую), на успехе — кортеж значений:
-    public static Result<(T1, T2)> Combine<T1, T2>(Result<T1> r1, Result<T2> r2); // arity 2–4
-    public static Result<Unit> Combine(params IResultBase[] results);
-}
+public sealed record MeetupFullWithAlternative(MeetupFull Cause, Guid AlternativeMeetupId) : EnrichedError(Cause);
+public sealed record EmailTaken(string Email, Guid ExistingUserId) : Error("identity.email.taken", "…");  // ошибка, обнаруженная Application
 ```
 
-### Паттерны использования
+Правила: гарантированные данные живут в свойствах record того слоя, который ошибку обнаружил; словарь `Details` — только для необязательного; `Enrich()` без аргументов — осознанное «данные уже полные».
 
-**В фабричном методе Value Object:**
-```csharp
-public static Result<Email> Create(string value)
-{
-    if (string.IsNullOrWhiteSpace(value))
-        return Errors.General.ValueIsRequired("email");
-    if (value.Length > 150)
-        return Errors.General.InvalidLength(1, 150, "email");
-    return new Email(value);
-}
+## AppResult\<T\>
+
+Форма та же, что у `Result<T>`, но `Errors : ErrorList<EnrichedError>` и `FirstError : EnrichedError`. Неявные конверсии только из `T`, `EnrichedError`, `ErrorList<EnrichedError>`. `Result<T>.Enrich()` переводит весь результат в `AppResult<T>`. API-слой (`ToHttpResult`, `ToActionResult`, эндпоинты FastEndpoints) принимает **только** `AppResult<T>`.
+
+## Envelope — один формат на все транспорты
+
+```json
+{ "success": false, "result": null,
+  "errors": [ { "code": "identity.otp.too-many-attempts", "message": "Слишком много попыток.",
+                "field": null, "details": { "retryAfterSeconds": 42 } } ],
+  "correlationId": "0f3c…", "timestamp": "2026-11-08T02:11:09Z" }
 ```
 
-**В Command Handler:**
-```csharp
-public async Task<Result<OrderId>> Handle(CreateOrderCommand cmd, CancellationToken ct)
-{
-    var customerResult = await _customerRepo.GetByIdAsync(cmd.CustomerId, ct);
-    if (customerResult is null)
-        return Errors.General.NotFound("customer", cmd.CustomerId);
+- `success` — дискриминатор; `result` на отказе всегда `null` (и для struct-результатов); `errors` всегда массив; `field` в camelCase по сегментам; `timestamp` — UTC из `TimeProvider`.
+- Успех тоже в конверте (`200`), void-команды — `200` с `result: null`. Не-JSON ответы (файлы, SSE) вне конверта.
+- `Envelope<T>` живёт в `Koto.Application`: SignalR-хаб или Kafka reply возвращают тот же тип.
+- HTTP-статус — грубый класс для инфраструктуры, не второй код: `*.not-found` 404, `*.already-*`/`*.conflict` 409, `*.unauthorized` 401, `*.forbidden` 403, `general.*`/`validation.*`/привязано к полю 400, остальное 422, исключение 500. При нескольких ошибках статус задаёт первая (`Combine` сохраняет порядок). Переопределение: `AddKotoApi(o => o.Map("payments.gateway.failed", 502))`.
 
-    var order = Order.Create(customerResult, cmd.Items);
-    _orderRepo.Add(order);
-    await _db.SaveChangesAsync(ct);
+## Гарантии контракта «код → данные»
 
-    return order.Id;
-}
-```
+1. Компилятор: обязательные данные — параметры record, без них ошибку не создать.
+2. `EnrichmentGuard` на границе API: если для типа ошибки существует более полный record (производный от `EnrichedError` с ctor-параметром этого типа), а на провод идёт голый экземпляр — исключение в Development, предупреждение в проде.
+3. `ErrorCatalog.ShouldBeValid` в тестах: формат, уникальность кодов, конструируемость.
 
-**Цепочка (pipeline):**
-```csharp
-return await Result<string>.Success(rawEmail)
-    .Bind(Email.Create)
-    .Map(email => new RegisteredUser(email))
-    .TapAsync(user => _repo.AddAsync(user, ct));
-```
+## Исключения
 
-**Агрегация нескольких фабрик (все ошибки, не первая):**
-```csharp
-var combined = Result.Combine(Email.Create(dto.Email), Name.Create(dto.Name));
-if (combined.IsFailure)
-    return Result<User>.Failure(combined.Errors);
-var (email, name) = combined.Value;
-```
-
-**В FastEndpoints endpoint:**
-```csharp
-var result = await _dispatcher.SendAsync(command, ct);
-if (result.IsFailure)
-    return await SendErrorAsync(result.Error, ct);
-return await SendOkAsync(result.Value, ct);
-```
-
-**В MVC / Minimal API (Koto.Api.AspNetCore):**
-```csharp
-// MVC-контроллер:
-return (await _dispatcher.SendAsync(command, ct)).ToActionResult(this);
-
-// Minimal API:
-app.MapPost("/orders", (CreateOrderCommand cmd, ICqrsDispatcher d, HttpContext ctx, CancellationToken ct)
-    => d.SendAsync(cmd, ct).ToHttpResultAsync(ctx));
-```
-Маппинг `Error.Code` → HTTP-статус — через расширяемый `KotoHttpErrorOptions`
-(ADR-020): незамапленные бизнес-коды дают **422**, не 500.
+Только для неожиданного: баг, упавшая база, таймаут. Их ловит один `GlobalExceptionHandler` и отдаёт тот же конверт с `general.server.internal-error` и 500. Ожидаемый исход (конфликт версий, занятый слот, лимит) — всегда `Result`, никогда исключение.
 
 ## Нет Maybe\<T\>
 
-Используем C# nullable reference types:
 ```csharp
-// Вместо Maybe<Customer>:
-Customer? customer = await _repo.GetByIdAsync(id, ct);
+Customer? customer = await repo.GetByIdAsync(id, ct);
 if (customer is null)
-    return Errors.General.NotFound("customer", id);
+    return new Errors.General.NotFound("customer", id).ForField("customerId");
 ```
-
-Это идиоматично для C# 8+ и не требует дополнительного обучения.

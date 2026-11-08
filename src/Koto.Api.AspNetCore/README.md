@@ -1,60 +1,95 @@
 # Koto.Api.AspNetCore
 
-Transport-agnostic ASP.NET Core integration for Koto results: map `Result<T>` to HTTP
-responses from **Minimal APIs**, **MVC controllers**, or any other ASP.NET Core host.
+ASP.NET Core integration for Koto results: map a handler's `AppResult<T>` to the Koto **Envelope**
+response from **Minimal APIs**, **MVC controllers** or any other ASP.NET Core host.
 `Koto.Api.FastEndpoints` builds on this package.
 
 ## What you get
 
-- `ToHttpResult()` / `ToHttpResultAsync()` — `Result<T>` → `IResult` (Minimal API)
-- `ToActionResult()` / `ToActionResultAsync()` — `Result<T>` → `ActionResult<T>` (MVC)
-- `KotoProblemDetails` — RFC 7807 Problem Details from one or many `Error`s
-  (multiple errors become validation problem details with an `errors` dictionary per field)
-- `KotoHttpErrorOptions` — extensible `Error.Code` → HTTP status registry
+- `ToHttpResult()` / `ToHttpResultAsync()` — `AppResult<T>` → `IResult` (Minimal API)
+- `ToActionResult()` / `ToActionResultAsync()` — `AppResult<T>` → `ActionResult<Envelope<T>>` (MVC)
+- `KotoApiOptions` — the coarse error → HTTP status classifier and the guard mode
+- `EnrichmentGuard` — fails fast (Development) when a handler forgot a fuller typed error
+- `ServerError` — the error behind every 500 (`general.server.internal-error`)
+
+Only application results are accepted. A domain `Result<T>` has no `ToHttpResult` — it must leave
+the handler through `ForField` / `Enrich` first (see `Koto.Application`).
+
+## The response
+
+```json
+HTTP 200
+{ "success": true,  "result": { "id": "…" }, "errors": [], "correlationId": "0f3c…", "timestamp": "2026-11-08T02:11:03Z" }
+
+HTTP 422
+{ "success": false, "result": null,
+  "errors": [ { "code": "identity.otp.too-many-attempts", "message": "Too many attempts.",
+                "field": null, "details": { "retryAfterSeconds": 42 } } ],
+  "correlationId": "0f3c…", "timestamp": "2026-11-08T02:11:09Z" }
+```
+
+Void commands respond `200` with `"result": null`. Non-JSON responses (files, streams) stay outside
+the envelope. `timestamp` comes from the registered `TimeProvider` (`TimeProvider.System` unless you
+register another one before `AddKotoAspNetCore`).
 
 ## Quick start
 
 ```csharp
-builder.Services.AddKotoAspNetCore(); // optional: o => o.Map("payments.gateway-failed", 502)
+builder.Services.AddKotoAspNetCore(); // optional: o => o.Map("payments.gateway.failed", 502)
 ```
 
 Minimal API:
 
 ```csharp
 app.MapPost("/orders", (CreateOrderCommand cmd, ICqrsDispatcher dispatcher, HttpContext ctx, CancellationToken ct)
-    => dispatcher.SendAsync(cmd, ct).ToHttpResultAsync(ctx));
+    => dispatcher.SendAsync(cmd, ct).ToHttpResultAsync(ctx))
+   .Produces<Envelope<OrderId>>();
 ```
 
 MVC controller:
 
 ```csharp
 [HttpPost]
-public async Task<ActionResult<OrderDto>> Create(CreateOrderCommand cmd, CancellationToken ct)
-    => (await _dispatcher.SendAsync(cmd, ct)).ToActionResult(this);
+public Task<ActionResult<Envelope<OrderId>>> Create(CreateOrderCommand cmd, CancellationToken ct)
+    => _dispatcher.SendAsync(cmd, ct).ToActionResultAsync(this);
 ```
 
-## Status code mapping
+## Status codes — a class for infrastructure, not a second error code
 
-Resolution order: exact code → custom rules → suffix → prefix → field-error default → fallback.
+Clients react to `errors[].code`; the status exists for the machinery that never reads the body
+(401 refresh flows, retries on 5xx, alerting, caches). So the mapping is coarse:
 
-| Rule | Status |
+| Rule (in order) | Status |
 |---|---|
+| exact code from `Map(code, status)` | as configured |
+| custom rules from `Map(error => status?)` | as configured |
 | `*.not-found` | 404 |
 | `*.already-*`, `*.conflict` | 409 |
 | `*.unauthorized` | 401 |
 | `*.forbidden` | 403 |
-| `general.*`, `validation.*`, `Error.Field != null` | 400 |
-| everything else | **422** (fallback, configurable) |
+| `general.*`, `validation.*`, error bound to a field | 400 |
+| everything else | **422** (`FallbackStatusCode`) |
 
-Unmapped business errors are **422, never 500** — a failed `Result` is a rule violation
-the client can act on; 500 is reserved for unhandled exceptions.
-
-Customize:
+A failed result is a rule violation the client can act on — never 500. For several errors the
+**first** one decides, and `Result.Combine` keeps the order you wrote. Customize:
 
 ```csharp
 builder.Services.AddKotoAspNetCore(o => o
-    .Map("subscription.payment-failed", StatusCodes.Status502BadGateway) // exact, highest priority
-    .MapSuffix(".expired", StatusCodes.Status410Gone)
-    .MapPrefix("quota.", StatusCodes.Status429TooManyRequests)
-    .Map(e => e.Code.Contains(".locked-") ? StatusCodes.Status423Locked : null));
+    .Map("payments.gateway.failed", StatusCodes.Status502BadGateway)
+    .Map(e => e.Code.EndsWith(".rate-limited") ? StatusCodes.Status429TooManyRequests : null));
 ```
+
+## EnrichmentGuard — the second level of the error contract
+
+The compiler guarantees the data of the error record a handler constructs. The guard checks, at the
+API boundary, that the handler did not forget the **fuller** type: when the scanned assemblies
+(`AddKotoApplication`) contain a record deriving from `EnrichedError` whose constructor takes an
+error of type `X` — `MeetupFullWithAlternative(MeetupFull Cause, Guid AlternativeMeetupId)` — a bare
+`MeetupFull` reaching the response is a violation.
+
+| Environment | Default |
+|---|---|
+| Development (and `IHostEnvironment`-less test hosts configured so) | throw `InvalidOperationException` |
+| anything else | log a warning, send the response as is |
+
+Override with `o.EnrichmentGuard = EnrichmentGuardMode.Off / Warn / Throw`.

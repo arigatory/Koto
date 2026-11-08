@@ -10,7 +10,8 @@ DDD-specific test helpers for Koto microservices.
 | `AggregateAssertions<TAgg>` | Domain event assertions |
 | `FakeRepository<TAgg, TId>` | In-memory `IRepository<TAgg,TId>` |
 | `FakeIntegrationEventPublisher` | Captures published `IIntegrationEvent`s |
-| `ResultAssertions<T>` | `.Should().BeSuccess()`, `.BeFailure()`, `.BeFailureWith("code")`, `.HaveErrors("code1", "code2")`, `.HaveValue(x)` |
+| `ResultAssertions<T>` / `AppResultAssertions<T>` | `.Should().BeSuccess()`, `.BeFailure()`, `.BeFailureWith("code")`, `.HaveErrors("code1", "code2")`, `.HaveValue(x)`; application results also `.HaveErrorForField("email")` |
+| `ErrorCatalog` | `Scan(assemblies)` lists every error record with its code and detail keys; `ShouldBeValid(assemblies)` fails on malformed or duplicate codes |
 
 ## Aggregate unit tests
 
@@ -37,8 +38,26 @@ var result = order.Cancel("reason");
 
 result.Should().BeSuccess();
 result.Should().BeFailureWith("orders.order.already-cancelled");
-result.Should().HaveErrors("general.value.is-required", "general.invalid-length"); // all codes, in order
+result.Should().HaveErrors("general.value.is-required", "general.value.invalid-length"); // all codes, in order
 result.Should().HaveValue(expectedValue);
+
+// Application results (handlers) carry enriched errors:
+var appResult = await handler.HandleAsync(command);
+appResult.Should().BeFailureWith("general.value.is-required").And.HaveErrorForField("email");
+```
+
+## Error catalog test
+
+One test per service keeps the error contract honest — every record constructs, every code follows
+`context.entity.problem`, no code is defined by two types:
+
+```csharp
+[Fact]
+public void Error_catalog_is_valid() =>
+    ErrorCatalog.ShouldBeValid(typeof(Order).Assembly, typeof(PlaceOrderHandler).Assembly);
+
+// ErrorCatalog.Scan(...) returns (Type, Code, Message, DetailKeys) — the input for generating
+// client-side types or documentation.
 ```
 
 ## Fake infrastructure

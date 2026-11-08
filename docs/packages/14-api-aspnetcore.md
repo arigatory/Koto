@@ -1,5 +1,7 @@
 # Koto.Api.AspNetCore — Plan
 
+> **Обновление v0.5.0-preview.1 (ADR-026, спека [16](16-error-model-envelope.md)):** ProblemDetails заменён `Envelope<T>` (ADR-020 superseded); `KotoHttpErrorOptions` → `KotoApiOptions` (грубый классификатор, `MapSuffix`/`MapPrefix` удалены); `EnrichmentGuard`; `ToHttpResult`/`ToActionResult` принимают только `AppResult<T>`. Актуальное API — README пакета.
+
 **Phase:** 3 | **Status:** DONE (v0.3.0-preview.1)
 **Depends on:** Koto.Domain + FrameworkReference Microsoft.AspNetCore.App
 

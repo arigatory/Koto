@@ -12,7 +12,9 @@ dotnet add package Koto.Infrastructure.Http
 
 | Type | Purpose |
 |---|---|
-| `ServiceHttpClient` | Abstract base for typed HTTP clients; maps HTTP errors to `Result<T>` |
+| `ServiceHttpClient` | Abstract base for typed HTTP clients; reads Koto envelopes and maps other HTTP errors to `Result<T>` |
+| `RemoteError` | An error returned by another Koto service (code, message, field, details) |
+| `HttpErrors` | Catalog for non-envelope responses (`general.resource.not-found`, …) |
 | `ICorrelationIdAccessor` | Interface for providing the current correlation ID |
 | `CorrelationIdHandler` | Delegating handler that propagates `X-Correlation-ID` |
 | `AddServiceHttpClient<TInterface, TImplementation>()` | Registers with standard resilience (retry + circuit breaker + timeout) |
@@ -59,25 +61,36 @@ services.AddServiceHttpClient<IPaymentService, PaymentServiceHttpClient>(
 
 Standard resilience pipeline is applied automatically (3 retries with exponential back-off, circuit breaker, 30 s timeout).
 
-### Error mapping
+### Reading responses
 
-| HTTP status | `Error.Code` |
+`ReadResultAsync<T>` returns a domain `Result<T>` — the calling handler enriches it like any other
+domain result (`ForField`, `Enrich`).
+
+- A Koto **envelope** body is unwrapped: `result` on success, each entry of `errors` as a
+  `RemoteError` (the remote `code`, `message`, `field` and `details`) on failure. Domain codes cross the
+  service boundary intact, so `if (result.FirstError.Code == "wallet.account.insufficient-funds")`
+  works without parsing JSON by hand. A malformed remote code becomes `general.remote.unknown-error`
+  with the original code in `details.remoteCode`.
+- Any other body: deserialized as `T` on a success status, otherwise mapped through `MapErrorResponse`:
+
+| HTTP status | Error |
 |---|---|
-| 404 | `general.not-found` |
-| 409 | `general.conflict` |
-| 422 | `general.validation` |
-| 5xx | `general.unexpected` |
+| 404 | `HttpErrors.ResourceNotFound` — `general.resource.not-found` |
+| 409 | `HttpErrors.ResourceConflict` — `general.resource.conflict` |
+| 400 / 422 | `HttpErrors.RequestInvalid` — `general.request.invalid` (message = response body) |
+| 5xx | `HttpErrors.ServerUnexpected` — `general.server.unexpected` (`details.statusCode`) |
+| other | `HttpErrors.HttpFailure` — `general.server.http-error` |
 
-Override `MapErrorResponse` to add service-specific error codes.
+Override `MapErrorResponse` to add service-specific errors.
 
 ## Service-to-service auth
 
 ```csharp
-// вызывающая сторона
+// calling side
 services.AddServiceHttpClient<IWalletService, WalletClient>(
     "wallet", "http://wallet", o => o.ApiKey = configuration["ServiceAuth:Key"]!);
 
-// принимающая сторона (Koto.Api.AspNetCore)
+// receiving side (Koto.Api.AspNetCore)
 services.AddAuthentication().AddServiceKey(configuration["ServiceAuth:Key"]!);
-// внутренний эндпоинт: Roles("Service")
+// internal endpoint: Roles("Service")
 ```

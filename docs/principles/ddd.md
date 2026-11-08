@@ -38,9 +38,9 @@ public sealed record Email
     public static Result<Email> Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Errors.General.ValueIsRequired();
+            return new Errors.General.ValueIsRequired();
         if (value.Length > 150)
-            return Errors.General.InvalidLength(1, 150);
+            return new Errors.General.InvalidLength(1, 150);
         // формат email...
         return new Email(value);
     }
@@ -74,7 +74,7 @@ public sealed class Money : ValueObject
 
 ## Репозитории
 
-- Интерфейс репозитория определяется в **домене** (`Koto.Domain`), реализация — в инфраструктуре (`Koto.Infrastructure.EFCore`).
+- Интерфейс репозитория (`IRepository<TAgg, TId>` и свои `IOrderRepository`) определяется в **Application** (ревизия ADR-005: порт принадлежит хендлерам), реализация — в инфраструктуре (`Koto.Infrastructure.EFCore`). Домен не знает о персистентности.
 - `Add(aggregate)` и `Delete(aggregate)` — синхронные, только регистрируют намерение в change tracker, не делают I/O.
 - `GetByIdAsync(id, ct)` — async, читает из БД.
 - **Нет `SaveAsync`** — коммит делает Unit of Work (`DbContext.SaveChangesAsync`) в application layer, не репозиторий.
@@ -93,15 +93,13 @@ await _db.SaveChangesAsync(ct); // коммит через UoW
 Каждый агрегат имеет свой тип ID — не `Guid` напрямую:
 
 ```csharp
-public readonly record struct OrderId(Guid Value)
+public sealed record OrderId(Guid Value) : StronglyTypedId<Guid>(Value)
 {
     public static OrderId New() => new(Guid.NewGuid());
-    public static OrderId From(Guid value) => new(value);
-    public override string ToString() => Value.ToString();
 }
 ```
 
-Prevents confusing `OrderId` с `CustomerId` на уровне компилятора.
+Record (не struct), унаследованный от `StronglyTypedId<T>`: EF Core-конвертеры регистрируются `KotoDbContext` автоматически (ADR-023), сравнение разных типов id — ошибка компиляции или исключение. `OrderId` с `CustomerId` не перепутать.
 
 ## Создание агрегатов — только через фабричные методы
 
@@ -122,6 +120,25 @@ public sealed class Order : AggregateRoot<OrderId>
 
 - **EF Core:** параметрless `protected` ctor + backing fields материализуют агрегат при чтении — публичный сеттер `Id` не нужен.
 - **Тесты:** строьте агрегаты тем же фабричным методом (или test-builder, вызывающим фабрику), а не object-initializer.
+
+## Ошибки домена — record-типы
+
+`Error` абстрактный: каждая ошибка — record, определённый рядом с агрегатом, свойства — её гарантированные данные
+(см. `errors-and-results.md`):
+
+```csharp
+public sealed record OrderAlreadyCancelled(OrderId OrderId)
+    : Error("orders.order.already-cancelled", "Заказ уже отменён.");
+
+public Result<Unit> Cancel(string reason)
+{
+    if (Status == OrderStatus.Cancelled)
+        return new OrderAlreadyCancelled(Id);
+    …
+}
+```
+
+Агрегат возвращает `Result<T>` и никогда не бросает исключения для ожидаемых отказов.
 
 ## Domain Services
 

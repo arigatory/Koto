@@ -25,7 +25,8 @@ Koto.Testing
 | Domain Event | `DomainEvent` | `OrderPlacedDomainEvent` |
 | Integration Event | `IntegrationEvent` | `OrderPlacedIntegrationEvent` |
 | Integration Command | `IntegrationCommand` | `ShipOrderIntegrationCommand` |
-| Domain Error class | `Errors` | `OrderErrors` (static class) |
+| Domain Error | record, имя — условие в прошедшем/состоянии | `OrderAlreadyCancelled`, `OtpExpired` (файл `Errors/OrderErrors.cs`, namespace `*.Domain.Errors`) |
+| Application Error (данные из базы) | record : `Error` или `: EnrichedError(Cause)` | `EmailTaken`, `MeetupFullWithAlternative` |
 | Repository interface | `IRepository` suffix or `I{Agg}Repository` | `IOrderRepository` |
 | Domain Service interface | `I{Name}` | `IShippingCostCalculator` |
 
@@ -56,14 +57,24 @@ CustomerRegistered, CustomerEmailChanged
 
 ## Коды ошибок
 
+Не меньше трёх kebab-case сегментов через точку (валидируется при создании `Error`):
+
 ```
 general.value.is-required
 general.value.invalid-length
 general.entity.not-found
 general.collection.too-small
 general.collection.too-large
+validation.rule.failed              ← правило FluentValidation без доменной фабрики
+general.server.internal-error       ← необработанное исключение (500)
 {service}.{entity}.{description}    ← orders.order.already-cancelled
 ```
+
+Суффиксы несут HTTP-класс: `*.not-found` → 404, `*.already-*` / `*.conflict` → 409, `*.unauthorized` → 401, `*.forbidden` → 403.
+
+## Поля `details`
+
+camelCase, скаляры и массивы скаляров; идентификаторы именуются по сущности (`orderId`, не `id`), чтобы ключи не конфликтовали при нескольких ошибках. Ключи — имена свойств record (`RetryAfterSeconds` → `retryAfterSeconds`).
 
 ## Файлы
 

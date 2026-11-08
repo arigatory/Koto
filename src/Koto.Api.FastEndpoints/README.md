@@ -1,47 +1,49 @@
 # Koto.Api.FastEndpoints
 
-FastEndpoints integration for Koto DDD building blocks. Builds on
-**Koto.Api.AspNetCore** (transport-agnostic Result→HTTP mapping, `KotoProblemDetails`,
-`KotoHttpErrorOptions`).
+FastEndpoints integration for Koto DDD building blocks. Builds on **Koto.Api.AspNetCore**
+(the `Envelope<T>` response, `KotoApiOptions` status classifier, `EnrichmentGuard`).
 
 ## What's included
 
 | Type | Purpose |
 |---|---|
-| `CommandEndpoint<TCommand>` | Dispatches void command → 204 on success, Problem Details on failure |
-| `CommandEndpoint<TCommand, TResult>` | Dispatches result command → 200 on success |
-| `QueryEndpoint<TQuery, TResult>` | Dispatches query → 200 / 404 / 400 |
+| `CommandEndpoint<TCommand>` | Dispatches a void command → `Envelope<object?>` with `result: null` |
+| `CommandEndpoint<TCommand, TResult>` | Dispatches a result command → `Envelope<TResult>` |
+| `QueryEndpoint<TQuery, TResult>` | Dispatches a query → `Envelope<TResult>` |
 | `MappedCommandEndpoint<TRequest, TCommand[, TResult]>` | Maps an HTTP request DTO to a command via `ToCommand` — keeps server-derived fields out of the wire contract |
 | `MappedQueryEndpoint<TRequest, TQuery, TResult>` | Maps an HTTP request DTO to a query via `ToQuery` |
+| `UseKotoFastEndpoints()` / `MapKotoFastEndpoints()` | `UseFastEndpoints` with binding and validator failures rendered as the envelope |
 | `ClaimsPrincipalExtensions.GetUserId()` | Reads the user id from the `NameIdentifier` claim (`TryGetUserId` for the no-throw path) |
-| `CorrelationIdMiddleware` | Reads/generates `X-Correlation-ID`, echoes in response |
-| `ICorrelationIdAccessor` | Access current correlation ID from anywhere in the request scope |
-| `GlobalExceptionHandler` | Catches unhandled exceptions → 500 Problem Details |
+| `CorrelationIdMiddleware` / `ICorrelationIdAccessor` | Reads/generates `X-Correlation-ID`, echoes it in the response and in every envelope |
+| `GlobalExceptionHandler` | Unhandled exception → 500 envelope with `general.server.internal-error` |
 
-Failed results are rendered by `KotoProblemDetails` from **Koto.Api.AspNetCore** —
-all `Result.Errors` are sent (multiple errors become RFC 7807 validation problem
-details grouped by `Error.Field`), with `errorCode`/`errorCodes` and `correlationId` extensions.
+Every response of a Koto endpoint is the envelope: `200` with `success: true` on success, the status
+chosen by `KotoApiOptions` (404 / 409 / 400 / 422 …) with `success: false` and **all** errors on
+failure. The base classes declare `Envelope<TResult>` as the FastEndpoints response type, so the
+generated OpenAPI matches what is sent.
 
 ## Setup
 
 ```csharp
 // Program.cs
-builder.Services.AddKotoApi();          // includes AddKotoAspNetCore()
-// Or customize the Error.Code → HTTP status registry:
-builder.Services.AddKotoApi(o => o.Map("payments.gateway-failed", 502));
+builder.Services.AddKotoApi();          // Koto.Api.AspNetCore + correlation id + exception handler
+// Or customize the error → status classifier:
+builder.Services.AddKotoApi(o => o.Map("payments.gateway.failed", 502));
 builder.Services.AddFastEndpoints();
 // ... other services
 
 var app = builder.Build();
-app.UseKotoApi(); // CorrelationId middleware + exception handler
-app.UseFastEndpoints();
+app.UseKotoApi();                        // correlation id middleware + exception handler
+app.UseKotoFastEndpoints();              // instead of UseFastEndpoints(): binding errors in the envelope too
 app.Run();
 ```
 
 ## Implementing an endpoint
 
+`HandleAsync` is sealed on all base endpoints — you only write `Configure()`:
+
 ```csharp
-// Void command (204 on success)
+// Void command → 200 { success: true, result: null }
 public class DeleteOrderEndpoint : CommandEndpoint<DeleteOrderCommand>
 {
     public override void Configure()
@@ -49,25 +51,15 @@ public class DeleteOrderEndpoint : CommandEndpoint<DeleteOrderCommand>
         Delete("/orders/{id}");
         AllowAnonymous();
     }
-
-    public override async Task HandleAsync(DeleteOrderCommand req, CancellationToken ct)
-        => await SendCommandAsync(req, ct);
 }
 
-// Command with result (200 on success)
+// Command with result → 200 { success: true, result: <OrderId> }
 public class PlaceOrderEndpoint : CommandEndpoint<PlaceOrderCommand, OrderId>
 {
-    public override void Configure()
-    {
-        Post("/orders");
-        AllowAnonymous();
-    }
-
-    public override async Task HandleAsync(PlaceOrderCommand req, CancellationToken ct)
-        => await SendCommandAsync(req, ct);
+    public override void Configure() => Post("/orders");
 }
 
-// Query (GET, 200/404)
+// Query → 200 / 404 (*.not-found) with the envelope
 public class GetOrderEndpoint : QueryEndpoint<GetOrderQuery, OrderDto>
 {
     public override void Configure()
@@ -75,9 +67,6 @@ public class GetOrderEndpoint : QueryEndpoint<GetOrderQuery, OrderDto>
         Get("/orders/{id}");
         AllowAnonymous();
     }
-
-    public override async Task HandleAsync(GetOrderQuery req, CancellationToken ct)
-        => await SendQueryAsync(req, ct);
 }
 ```
 
@@ -105,18 +94,16 @@ public sealed class SubmitJudgmentEndpoint
 Prefer the plain `CommandEndpoint`/`QueryEndpoint` when the request **is** the command (no server-derived
 fields). `HandleAsync` is sealed on the mapped variants — you only implement `Configure` and `ToCommand`/`ToQuery`.
 
+## Binding and validator failures
+
+FastEndpoints' own failures (JSON binding, `Validator<TRequest>` rules) are sent through the same
+envelope with status 400: a failure carrying a Koto `Error` in `CustomState` (`MustBeValueObject`)
+keeps its code, any other rule becomes `validation.rule.failed` with `details.rule`. The `field`
+is camelCased per path segment (`items[0].name`), matching the JSON property names.
+
 ## Error code → HTTP status mapping
 
-Status codes come from `KotoHttpErrorOptions` (Koto.Api.AspNetCore) — an extensible
-registry (exact code → custom rules → suffix → prefix → fallback). Defaults:
-
-| Error code pattern | Status |
-|---|---|
-| `*.not-found` | 404 Not Found |
-| `*.already-*`, `*.conflict` | 409 Conflict |
-| `*.unauthorized` | 401 Unauthorized |
-| `*.forbidden` | 403 Forbidden |
-| `general.*`, `validation.*`, `Error.Field != null` | 400 Bad Request |
-| anything else | **422 Unprocessable Entity** (configurable fallback; 500 is reserved for unhandled exceptions) |
-
-Customize via `AddKotoApi(o => o.Map("subscription.payment-failed", 502))`.
+Status codes come from `KotoApiOptions` (Koto.Api.AspNetCore): exact code → custom rules →
+`*.not-found` 404 → `*.already-*` / `*.conflict` 409 → `*.unauthorized` 401 → `*.forbidden` 403 →
+`general.*` / `validation.*` / field-bound 400 → **422** fallback. Customize via
+`AddKotoApi(o => o.Map("payments.gateway.failed", 502))`.
