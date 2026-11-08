@@ -24,7 +24,7 @@ public class ResultTests
 
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -37,11 +37,11 @@ public class ResultTests
     }
 
     [Fact]
-    public void Error_throws_on_success()
+    public void FirstError_throws_on_success()
     {
         var result = Result<int>.Success(1);
 
-        var act = () => _ = result.Error;
+        var act = () => _ = result.FirstError;
         act.Should().Throw<InvalidOperationException>();
     }
 
@@ -60,7 +60,7 @@ public class ResultTests
         Result<string> result = SomeError;
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class ResultTests
     {
         var result = Result<int>.Failure(SomeError).Map(x => x * 2);
 
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class ResultTests
         var result = Result<int>.Failure(SomeError)
             .Bind(x => Result<string>.Success($"value:{x}"));
 
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -116,27 +116,9 @@ public class ResultTests
     }
 
     [Fact]
-    public void TapError_executes_on_failure()
-    {
-        Error? captured = null;
-        Result<int>.Failure(SomeError).TapError(e => captured = e);
-
-        captured.Should().Be(SomeError);
-    }
-
-    [Fact]
-    public void TapError_does_not_execute_on_success()
-    {
-        var executed = false;
-        Result<int>.Success(1).TapError(_ => executed = true);
-
-        executed.Should().BeFalse();
-    }
-
-    [Fact]
     public void Match_calls_onSuccess()
     {
-        var output = Result<int>.Success(3).Match(v => $"ok:{v}", e => $"err:{e.Code}");
+        var output = Result<int>.Success(3).Match(v => $"ok:{v}", errors => $"err:{errors[0].Code}");
 
         output.Should().Be("ok:3");
     }
@@ -144,7 +126,7 @@ public class ResultTests
     [Fact]
     public void Match_calls_onFailure()
     {
-        var output = Result<int>.Failure(SomeError).Match(v => $"ok:{v}", e => $"err:{e.Code}");
+        var output = Result<int>.Failure(SomeError).Match(v => $"ok:{v}", errors => $"err:{errors[0].Code}");
 
         output.Should().Be("err:test.result.error");
     }
@@ -163,7 +145,7 @@ public class ResultTests
         var result = Result<int>.Success(-1).Ensure(x => x > 0, SomeError);
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -172,7 +154,7 @@ public class ResultTests
         var originalError = new TestError("test.result.original", "Original error.");
         var result = Result<int>.Failure(originalError).Ensure(x => x > 0, SomeError);
 
-        result.Error.Should().Be(originalError);
+        result.FirstError.Should().Be(originalError);
     }
 
     [Fact]
@@ -188,7 +170,7 @@ public class ResultTests
     {
         var result = await Result<int>.Failure(SomeError).MapAsync(x => Task.FromResult(x * 10));
 
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -206,7 +188,7 @@ public class ResultTests
         var result = await Result<int>.Failure(SomeError)
             .BindAsync(x => Task.FromResult(Result<string>.Success($"v:{x}")));
 
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
     }
 
     [Fact]
@@ -251,6 +233,24 @@ public class ResultTests
             .EnsureAsync(x => Task.FromResult(x > 0), SomeError);
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(SomeError);
+        result.FirstError.Should().Be(SomeError);
+    }
+
+    [Fact]
+    public void Errors_convert_implicitly_to_another_result_type()
+    {
+        var failed = Result<string>.Failure([SomeError, new TestError("test.result.second", "Second.")]);
+
+        Result<int> propagated = failed.Errors;
+
+        propagated.IsFailure.Should().BeTrue();
+        propagated.Errors.Should().HaveCount(2);
+        propagated.Errors.Should().ContainInOrder(failed.Errors[0], failed.Errors[1]);
+    }
+
+    [Fact]
+    public void Errors_is_a_typed_error_list()
+    {
+        Result<int>.Failure(SomeError).Errors.Should().BeOfType<ErrorList<Error>>();
     }
 }

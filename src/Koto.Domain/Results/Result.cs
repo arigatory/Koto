@@ -1,27 +1,24 @@
 namespace Koto.Domain;
 
 /// <summary>
-/// Represents the outcome of an operation that can either succeed with a value of
-/// type <typeparamref name="T"/> or fail with one or more <see cref="Domain.Error"/>s.
-/// Use <see cref="Success"/> / <see cref="Failure(Domain.Error)"/> to construct, or rely on the
-/// implicit conversions from <typeparamref name="T"/> and <see cref="Domain.Error"/>.
+/// Outcome of a domain operation: either a value of type <typeparamref name="T"/> or one or more
+/// <see cref="Error"/>s. Construct via <see cref="Success"/> / <see cref="Failure(Error)"/> or the
+/// implicit conversions from <typeparamref name="T"/>, <see cref="Error"/> and <see cref="ErrorList{TError}"/>.
+/// Propagate a failure with <c>return other.Errors;</c> — never with the first error alone.
 /// </summary>
 /// <typeparam name="T">The type of the success value.</typeparam>
-public sealed class Result<T> : IResultBase, IResultFactory<Result<T>>
+public sealed class Result<T> : IResultBase
 {
-    private static readonly Error[] NoErrors = [];
-
     private readonly T? _value;
-    private readonly Error[] _errors;
+    private readonly ErrorList<Error> _errors;
 
     private Result(T value)
     {
         IsSuccess = true;
         _value = value;
-        _errors = NoErrors;
     }
 
-    private Result(Error[] errors)
+    private Result(ErrorList<Error> errors)
     {
         IsSuccess = false;
         _errors = errors;
@@ -39,15 +36,17 @@ public sealed class Result<T> : IResultBase, IResultFactory<Result<T>>
         : throw new InvalidOperationException("Cannot access Value on a failed result.");
 
     /// <summary>
-    /// The first error. Throws <see cref="InvalidOperationException"/> on success.
-    /// A failed result carries at least one error; see <see cref="Errors"/> for all of them.
+    /// The first error — the headline of the failure (it also drives the HTTP status). Throws
+    /// <see cref="InvalidOperationException"/> on success. To propagate a failure use <see cref="Errors"/>.
     /// </summary>
-    public Error Error => IsFailure
+    public Error FirstError => IsFailure
         ? _errors[0]
-        : throw new InvalidOperationException("Cannot access Error on a successful result.");
+        : throw new InvalidOperationException("Cannot access FirstError on a successful result.");
 
-    /// <summary>All errors carried by a failed result; empty on success.</summary>
-    public IReadOnlyList<Error> Errors => _errors;
+    /// <summary>All errors of a failed result; empty on success.</summary>
+    public ErrorList<Error> Errors => _errors;
+
+    IReadOnlyList<Error> IResultBase.Errors => _errors;
 
     /// <summary>Creates a successful result wrapping <paramref name="value"/>.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <c>null</c>.</exception>
@@ -62,30 +61,31 @@ public sealed class Result<T> : IResultBase, IResultFactory<Result<T>>
     public static Result<T> Failure(Error error)
     {
         ArgumentNullException.ThrowIfNull(error);
-        return new([error]);
+        return new((ErrorList<Error>)error);
     }
 
     /// <summary>Creates a failed result carrying all of <paramref name="errors"/>.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="errors"/> (or an element) is <c>null</c>.</exception>
     /// <exception cref="ArgumentException"><paramref name="errors"/> is empty.</exception>
-    public static Result<T> Failure(IEnumerable<Error> errors)
-    {
-        ArgumentNullException.ThrowIfNull(errors);
-        var array = errors.ToArray();
-        if (array.Length == 0)
-            throw new ArgumentException("A failed result requires at least one error.", nameof(errors));
-        if (Array.IndexOf(array, null) >= 0)
-            throw new ArgumentNullException(nameof(errors), "Error collection must not contain null.");
-        return new(array);
-    }
+    public static Result<T> Failure(IEnumerable<Error> errors) => Failure(new ErrorList<Error>(errors));
 
-    static Result<T> IResultFactory<Result<T>>.FromErrors(IReadOnlyList<Error> errors) => Failure(errors);
+    /// <summary>Creates a failed result carrying all of <paramref name="errors"/>.</summary>
+    /// <exception cref="ArgumentException"><paramref name="errors"/> is empty.</exception>
+    public static Result<T> Failure(ErrorList<Error> errors)
+    {
+        if (errors.Count == 0)
+            throw new ArgumentException("A failed result requires at least one error.", nameof(errors));
+        return new(errors);
+    }
 
     /// <summary>Implicitly wraps a value in a successful result.</summary>
     public static implicit operator Result<T>(T value) => Success(value);
 
     /// <summary>Implicitly wraps an error in a failed result.</summary>
     public static implicit operator Result<T>(Error error) => Failure(error);
+
+    /// <summary>Implicitly wraps a non-empty error list in a failed result (<c>return other.Errors;</c>).</summary>
+    public static implicit operator Result<T>(ErrorList<Error> errors) => Failure(errors);
 
     /// <summary>Transforms the success value; propagates all errors unchanged on failure.</summary>
     public Result<TNew> Map<TNew>(Func<T, TNew> mapper) =>
@@ -102,31 +102,24 @@ public sealed class Result<T> : IResultBase, IResultFactory<Result<T>>
         return this;
     }
 
-    /// <summary>Runs <paramref name="action"/> on the first error; returns itself unchanged.</summary>
-    public Result<T> TapError(Action<Error> action)
-    {
-        if (IsFailure) action(Error);
-        return this;
-    }
-
     /// <summary>Runs <paramref name="action"/> on all errors; returns itself unchanged.</summary>
-    public Result<T> TapErrors(Action<IReadOnlyList<Error>> action)
+    public Result<T> TapErrors(Action<ErrorList<Error>> action)
     {
         if (IsFailure) action(_errors);
         return this;
     }
 
     /// <summary>Projects the result to a single value by providing handlers for both cases.</summary>
-    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<Error, TResult> onFailure) =>
-        IsSuccess ? onSuccess(Value) : onFailure(Error);
+    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<ErrorList<Error>, TResult> onFailure) =>
+        IsSuccess ? onSuccess(Value) : onFailure(_errors);
 
     /// <summary>Async version of <see cref="Match{TResult}"/> where both handlers are asynchronous.</summary>
-    public Task<TResult> MatchAsync<TResult>(Func<T, Task<TResult>> onSuccess, Func<Error, Task<TResult>> onFailure) =>
-        IsSuccess ? onSuccess(Value) : onFailure(Error);
+    public Task<TResult> MatchAsync<TResult>(Func<T, Task<TResult>> onSuccess, Func<ErrorList<Error>, Task<TResult>> onFailure) =>
+        IsSuccess ? onSuccess(Value) : onFailure(_errors);
 
     /// <summary>Async version of <see cref="Match{TResult}"/> where only the success handler is asynchronous.</summary>
-    public Task<TResult> MatchAsync<TResult>(Func<T, Task<TResult>> onSuccess, Func<Error, TResult> onFailure) =>
-        IsSuccess ? onSuccess(Value) : Task.FromResult(onFailure(Error));
+    public Task<TResult> MatchAsync<TResult>(Func<T, Task<TResult>> onSuccess, Func<ErrorList<Error>, TResult> onFailure) =>
+        IsSuccess ? onSuccess(Value) : Task.FromResult(onFailure(_errors));
 
     /// <summary>
     /// Returns a failure with <paramref name="error"/> if the success value does not satisfy

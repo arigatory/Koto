@@ -11,13 +11,13 @@ public class ResultMultiErrorTests
     // ── Multi-error construction ───────────────────────────────────────────────
 
     [Fact]
-    public void Failure_with_many_errors_exposes_all_and_first_as_Error()
+    public void Failure_with_many_errors_exposes_all_and_first()
     {
         var result = Result<int>.Failure([ErrorA, ErrorB]);
 
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().ContainInOrder(ErrorA, ErrorB);
-        result.Error.Should().Be(ErrorA);
+        result.FirstError.Should().Be(ErrorA);
     }
 
     [Fact]
@@ -63,11 +63,10 @@ public class ResultMultiErrorTests
     [Fact]
     public void TapErrors_receives_all_errors()
     {
-        IReadOnlyList<Error>? seen = null;
+        var seen = ErrorList<Error>.Empty;
 
         Result<int>.Failure([ErrorA, ErrorB]).TapErrors(errors => seen = errors);
 
-        seen.Should().NotBeNull();
         seen.Should().HaveCount(2);
     }
 
@@ -77,7 +76,7 @@ public class ResultMultiErrorTests
     public void NonGeneric_Success_and_Failure_produce_unit_results()
     {
         Result.Success().IsSuccess.Should().BeTrue();
-        Result.Failure(ErrorA).Error.Should().Be(ErrorA);
+        Result.Failure(ErrorA).FirstError.Should().Be(ErrorA);
         Result.Failure([ErrorA, ErrorB]).Errors.Should().HaveCount(2);
     }
 
@@ -137,7 +136,7 @@ public class ResultMultiErrorTests
     {
         var value = await Result<int>.Failure(ErrorA).MatchAsync(
             onSuccess: async x => { await Task.Yield(); return x; },
-            onFailure: error => error.Code.Length);
+            onFailure: errors => errors[0].Code.Length);
 
         value.Should().Be(ErrorA.Code.Length);
     }
@@ -147,8 +146,16 @@ public class ResultMultiErrorTests
     {
         var value = await Result<int>.Failure(ErrorA).MatchAsync(
             onSuccess: async x => { await Task.Yield(); return "ok"; },
-            onFailure: async e => { await Task.Yield(); return e.Code; });
+            onFailure: async errors => { await Task.Yield(); return errors[0].Code; });
 
         value.Should().Be("test.result.a");
+    }
+
+    [Fact]
+    public void Match_receives_all_errors()
+    {
+        var count = Result<int>.Failure([ErrorA, ErrorB]).Match(_ => 0, errors => errors.Count);
+
+        count.Should().Be(2);
     }
 }
