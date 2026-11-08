@@ -6,21 +6,18 @@ using Koto.Domain;
 namespace Koto.Validation;
 
 /// <summary>
-/// Pipeline behavior that runs all registered <see cref="IValidator{T}"/>s for the request
-/// before the handler executes. On failure, returns a failed result carrying one structured
-/// <see cref="Error"/> per validation failure (code, message, and the offending field) —
-/// no information is collapsed into a single message string.
+/// Pipeline behavior that runs all registered <see cref="IValidator{T}"/>s for the request —
+/// sequentially, so validators can share scoped services such as a DbContext — before the handler
+/// executes. On failure it returns a failed result carrying one <see cref="EnrichedError"/> per
+/// validation failure, bound to the offending field: a domain error produced through
+/// <see cref="KotoValidators.MustBeValueObject{T,TSource,TValueObject}"/> keeps its code; any other
+/// rule failure becomes <see cref="ValidationRuleFailed"/>.
 /// </summary>
-/// <remarks>
-/// The <typeparamref name="TResponse"/> constraint (<see cref="IResultFactory{TSelf}"/>)
-/// makes failure construction compile-time safe; the dispatcher always closes this behavior
-/// over <c>Result&lt;T&gt;</c>, which satisfies it.
-/// </remarks>
 /// <typeparam name="TRequest">The command or query type.</typeparam>
-/// <typeparam name="TResponse">The response type (<c>Result&lt;T&gt;</c>).</typeparam>
+/// <typeparam name="TResponse">The response type (<c>AppResult&lt;T&gt;</c>).</typeparam>
 public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
-    where TResponse : IResultBase, IResultFactory<TResponse>
+    where TResponse : IResultBase, IAppResultFactory<TResponse>
 {
     private readonly IReadOnlyList<IValidator<TRequest>> _validators;
 
@@ -35,25 +32,26 @@ public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<
             return await next().ConfigureAwait(false);
 
         var context = new ValidationContext<TRequest>(request);
-        var results = await Task.WhenAll(
-            _validators.Select(v => v.ValidateAsync(context, ct))).ConfigureAwait(false);
+        var errors = new List<EnrichedError>();
+        foreach (var validator in _validators)
+        {
+            var result = await validator.ValidateAsync(context, ct).ConfigureAwait(false);
+            errors.AddRange(result.Errors.Select(ToError));
+        }
 
-        var errors = results
-            .SelectMany(r => r.Errors)
-            .Select(ToError)
-            .ToArray();
-
-        return errors.Length == 0
+        return errors.Count == 0
             ? await next().ConfigureAwait(false)
             : TResponse.FromErrors(errors);
     }
 
-    private static Error ToError(ValidationFailure failure) =>
-        failure.CustomState is Error domainError
-            // Structured Error attached by KotoValidators (domain factory failure).
-            ? domainError.Field is null ? domainError with { Field = failure.PropertyName } : domainError
-            : new Error(
-                string.IsNullOrEmpty(failure.ErrorCode) ? "validation.failed" : failure.ErrorCode,
-                failure.ErrorMessage)
-            { Field = string.IsNullOrEmpty(failure.PropertyName) ? null : failure.PropertyName };
+    private static EnrichedError ToError(ValidationFailure failure)
+    {
+        var field = string.IsNullOrEmpty(failure.PropertyName) ? null : failure.PropertyName;
+        var error = failure.CustomState is Error domainError
+            ? domainError.Enrich()
+            : new ValidationRuleFailed(
+                string.IsNullOrEmpty(failure.ErrorCode) ? "unknown" : failure.ErrorCode,
+                failure.ErrorMessage).Enrich();
+        return error.Field is null && field is not null ? error with { Field = field } : error;
+    }
 }
