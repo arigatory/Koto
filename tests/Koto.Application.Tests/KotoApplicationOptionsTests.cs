@@ -33,7 +33,7 @@ public class KotoApplicationOptionsTests
         var services = new ServiceCollection();
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddKotoApplication(
-            o => o.AddLoggingBehavior(),
+            o => { o.AddLoggingBehavior(); o.ValidateHandlers = false; },   // the test assembly deliberately contains orphan commands
             typeof(KotoApplicationOptionsTests).Assembly);
 
         var dispatcher = services.BuildServiceProvider().GetRequiredService<ICqrsDispatcher>();
@@ -44,10 +44,10 @@ public class KotoApplicationOptionsTests
     }
 
     [Fact]
-    public async Task AddKotoApplication_without_options_registers_no_behaviors()
+    public async Task AddKotoApplication_registers_no_behaviors_unless_configured()
     {
         var services = new ServiceCollection();
-        services.AddKotoApplication(typeof(KotoApplicationOptionsTests).Assembly);
+        services.AddKotoApplication(o => o.ValidateHandlers = false, typeof(KotoApplicationOptionsTests).Assembly);
 
         services.Should().NotContain(d => d.ServiceType == typeof(IPipelineBehavior<,>));
 

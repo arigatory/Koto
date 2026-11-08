@@ -13,6 +13,13 @@ public sealed class KotoApplicationOptions
     internal List<Type> BehaviorTypes { get; } = [];
 
     /// <summary>
+    /// When <c>true</c> (default), <c>AddKotoApplication</c> fails fast if a command or query in the
+    /// scanned assemblies has no handler there, or has more than one. Disable only when handlers are
+    /// registered by hand or live in assemblies that are not scanned.
+    /// </summary>
+    public bool ValidateHandlers { get; set; } = true;
+
+    /// <summary>
     /// Adds an open-generic pipeline behavior, e.g. <c>typeof(LoggingBehavior&lt;,&gt;)</c>.
     /// The container closes it over each concrete command/query type at dispatch time.
     /// </summary>
@@ -46,9 +53,9 @@ public sealed class KotoApplicationOptions
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <see cref="CqrsDispatcher"/> as <see cref="ICqrsDispatcher"/> and scans
-    /// <paramref name="assemblies"/> for all command and query handlers.
-    /// No pipeline behaviors are registered — use the
+    /// Registers <see cref="CqrsDispatcher"/> as <see cref="ICqrsDispatcher"/>, scans
+    /// <paramref name="assemblies"/> for all command and query handlers and fails fast when a
+    /// command or query has no handler. No pipeline behaviors are registered — use the
     /// <see cref="AddKotoApplication(IServiceCollection, Action{KotoApplicationOptions}, Assembly[])"/>
     /// overload to opt in.
     /// </summary>
@@ -60,39 +67,72 @@ public static class ServiceCollectionExtensions
         => services.AddKotoApplication(_ => { }, assemblies);
 
     /// <summary>
-    /// Registers <see cref="CqrsDispatcher"/>, scans <paramref name="assemblies"/> for
-    /// handlers, and registers the pipeline behaviors configured via <paramref name="configure"/>.
+    /// Registers <see cref="CqrsDispatcher"/>, scans <paramref name="assemblies"/> for handlers,
+    /// registers the pipeline behaviors configured via <paramref name="configure"/> and, unless
+    /// <see cref="KotoApplicationOptions.ValidateHandlers"/> is disabled, fails fast when a command or
+    /// query in those assemblies has no handler or more than one.
     /// Behaviors execute in the order added (first = outermost); they are registered as
     /// open generics and close over the concrete command/query type at dispatch time.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Configures pipeline behaviors, e.g. <c>o =&gt; o.AddLoggingBehavior().AddTransactionBehavior()</c>.</param>
     /// <param name="assemblies">Assemblies to scan for handler implementations.</param>
+    /// <exception cref="InvalidOperationException">A scanned command or query has no handler, or several.</exception>
     public static IServiceCollection AddKotoApplication(
         this IServiceCollection services,
         Action<KotoApplicationOptions> configure,
         params Assembly[] assemblies)
     {
         ArgumentNullException.ThrowIfNull(configure);
+        ArgumentNullException.ThrowIfNull(assemblies);
 
         services.AddScoped<ICqrsDispatcher, CqrsDispatcher>();
+        RegisterAssemblies(services, assemblies);
 
         var options = new KotoApplicationOptions();
         configure(options);
         foreach (var behaviorType in options.BehaviorTypes)
             services.AddTransient(typeof(IPipelineBehavior<,>), behaviorType);
 
-        foreach (var assembly in assemblies)
+        var scannedTypes = assemblies
+            .SelectMany(AssemblyScanning.GetLoadableTypes)
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .ToArray();
+
+        foreach (var type in scannedTypes)
         {
-            foreach (var type in AssemblyScanning.GetLoadableTypes(assembly)
-                         .Where(t => !t.IsAbstract && !t.IsInterface))
+            foreach (var iface in type.GetInterfaces().Where(IsHandlerInterface))
+                services.AddTransient(iface, type);
+        }
+
+        if (options.ValidateHandlers)
+        {
+            var problems = HandlerRegistrationValidator.FindProblems(scannedTypes);
+            if (problems.Count > 0)
             {
-                foreach (var iface in type.GetInterfaces().Where(IsHandlerInterface))
-                    services.AddTransient(iface, type);
+                throw new InvalidOperationException(
+                    "Koto: every command and query needs exactly one handler in the scanned assemblies:\n - " +
+                    string.Join("\n - ", problems) +
+                    "\nRegister the missing handlers, or set KotoApplicationOptions.ValidateHandlers = false " +
+                    "if they are registered by hand.");
             }
         }
 
         return services;
+    }
+
+    private static void RegisterAssemblies(IServiceCollection services, Assembly[] assemblies)
+    {
+        var registry = services
+            .FirstOrDefault(d => d.ServiceType == typeof(KotoApplicationAssemblies))
+            ?.ImplementationInstance as KotoApplicationAssemblies;
+        if (registry is null)
+        {
+            registry = new KotoApplicationAssemblies();
+            services.AddSingleton(registry);
+        }
+
+        registry.Add(assemblies);
     }
 
     private static bool IsHandlerInterface(Type t) =>
