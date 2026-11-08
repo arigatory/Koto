@@ -185,11 +185,40 @@ Add `AddKotoValidation(...)`, `AddKotoObservability(...)`, `AddKotoWolverine(...
 
 ---
 
+## Skill for coding agents
+
+Koto ships an [Agent Skill](https://agentskills.io) in [`skills/koto/`](skills/koto/) that teaches Claude Code, Codex,
+Cursor and other agents what this README only hints at: the three-layer result rail, the error catalog, handler and
+endpoint signatures, package selection, the wiring, the Kafka and EF Core gotchas, and the 0.4 → 0.5 migration. With it
+an agent reaches for `AppResult<T>`, `ForField`/`Enrich` and the envelope instead of guessing from a MediatR-shaped memory.
+
+Install it into one service repo, or globally with `-g`, using the [skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add arigatory/Koto --skill koto                      # add -g for all projects, -a claude-code -y to skip prompts
+npx skills add arigatory/Koto@v0.5.0-preview.1 --skill koto     # pin the skill to the tag you compiled against
+```
+
+Or without tooling — clone Koto and link the folder, so the skill follows the checked-out version:
+
+```bash
+git clone https://github.com/arigatory/Koto.git ~/src/Koto
+ln -s ~/src/Koto/skills/koto ~/.claude/skills/koto         # Claude Code, every project
+# or: ln -s ~/src/Koto/skills/koto .claude/skills/koto     # one project only
+```
+
+The skill is versioned with the packages: install it from the tag that matches your `Koto.*` version (`@v0.5.0-preview.1`
+above, or `git checkout v0.5.0-preview.1` in the clone) so it describes the API you compiled against. It sends agents to the package READMEs and ADRs for exact signatures, so nothing
+has to be memorized.
+
+---
+
 ## Documentation
 
 - Per-package guides: `src/<Package>/README.md` (also shown on each package's nuget.org page)
 - Architecture decision records: [`adr/`](adr/) — 26 ADRs covering Result, errors, the envelope, repositories, events, versioning
 - Design principles in depth: [`docs/principles/`](docs/principles/) — DDD, errors-and-results, architecture, naming
+- Agent skill: [`skills/koto/`](skills/koto/) — conventions, wiring and the 0.4 → 0.5 migration checklist for coding agents
 
 ---
 

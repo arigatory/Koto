@@ -10,6 +10,8 @@ Open-source набор NuGet-пакетов для DDD, CQRS, Event Sourcing и 
 - Шаблоны (`Koto.Templates`, Phase 5) — НЕ начаты; новые сервисы скаффолдятся вручную.
 - Детальный индекс фаз: `PLAN.md`
 - Планы пакетов: `docs/packages/`
+- Скилл для агентов-потребителей: `skills/koto/` (источник правды, публикуется с репо; `~/.claude/skills/koto` у автора — симлинк на него).
+  Меняется вместе с публичным API и README: конвенции, чеклист миграции, `koto-version` во frontmatter.
 
 ## Стек (все MIT/Apache 2.0)
 - Messaging: **Wolverine** + WolverineFx.Kafka
