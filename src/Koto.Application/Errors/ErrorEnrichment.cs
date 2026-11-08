@@ -67,4 +67,14 @@ public static class ErrorEnrichment
             ? result
             : Result<T>.Failure(result.Errors.ForField(field).Select(static e => (Error)e));
     }
+
+    /// <summary>
+    /// Converts a domain result into the application result returned by handlers: the value is kept,
+    /// plain errors are wrapped without additions, already enriched errors are kept as they are.
+    /// </summary>
+    public static AppResult<T> Enrich<T>(this Result<T> result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return result.IsSuccess ? AppResult<T>.Success(result.Value) : AppResult<T>.Failure(result.Errors.Enrich());
+    }
 }
