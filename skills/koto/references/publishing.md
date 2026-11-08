@@ -12,7 +12,7 @@ Repo: github.com/arigatory/Koto — the canonical source; work from a clone of i
    git tag v0.5.0-preview.1
    git push origin main --tags
    ```
-5. GitHub Actions `publish.yml` triggers on `v*.*.*` tags: restore → build → test → `dotnet pack /p:Version=<tag without v>` → `dotnet nuget push` all packages in Koto.slnx (+ snupkg symbols) with `--skip-duplicate`.
+5. GitHub Actions `publish.yml` triggers on `v*.*.*` tags: restore → build → test → `dotnet pack /p:Version=<tag without v>` → `NuGet/login` (OIDC → one-hour API key) → `dotnet nuget push` all packages in Koto.slnx (+ snupkg symbols) with `--skip-duplicate`. Authentication is nuget.org **Trusted Publishing**: a policy on nuget.org (owner `arigatory`, repository `arigatory/Koto`, workflow `publish.yml`, no environment, glob `Koto.*`) trusts the workflow's OIDC token, so no API key exists that could expire. A 403 on the push step means the policy is missing or inactive — check https://www.nuget.org/account/apikeys (Trusted Publishing section).
 6. Verify: `gh run watch` in the Koto repo; then check a package page on nuget.org shows the new version.
 
 A published version cannot be unpublished (only unlisted) — tag and push only after the full test suite and a Release `dotnet pack` are green locally.
