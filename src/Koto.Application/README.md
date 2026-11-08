@@ -125,9 +125,11 @@ public async Task<Envelope<ChatReplyDto>> Ask(AskCommand command)          // Si
 }
 ```
 
-`result` is `null` on failure (also for struct results), `field` is camelCased per path segment to
-match the JSON the client sent, `success` is the discriminator clients branch on. HTTP status codes
-remain meaningful and are chosen by the API layer (`Koto.Api.AspNetCore`).
+On HTTP every failure is sent as `Envelope<object?>`, so `result` is `null` whatever the result type;
+`ToEnvelope<T>` on a typed transport (a hub method returning `Envelope<Guid>`) yields `default(T)` on
+failure, so prefer reference DTOs there. `field` is camelCased per path segment to match the JSON the
+client sent; `success` is the discriminator clients branch on. HTTP status codes remain meaningful and
+are chosen by the API layer (`Koto.Api.AspNetCore`).
 
 ## Pipeline behaviors
 

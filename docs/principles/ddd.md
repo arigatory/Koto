@@ -142,9 +142,9 @@ public Result<Unit> Cancel(string reason)
 
 ## Domain Services
 
-Используются только когда логика не принадлежит ни одному агрегату:
+Используются только когда логика не принадлежит ни одному агрегату (обычный интерфейс, маркера в Koto нет):
 ```csharp
-public interface IShippingCostCalculator : IDomainService
+public interface IShippingCostCalculator
 {
     Money Calculate(Address destination, Weight weight);
 }

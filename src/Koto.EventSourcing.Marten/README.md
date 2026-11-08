@@ -70,7 +70,7 @@ public class PlaceOrderHandler : ICommandHandler<PlaceOrderCommand, OrderId>
 {
     private readonly IEventSourcedRepository<Order, OrderId> _orders;
 
-    public async Task<Result<OrderId>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct = default)
+    public async Task<AppResult<OrderId>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct = default)
     {
         var order = Order.Place(OrderId.New(), cmd.Total);
         await _orders.SaveAsync(order, ct);

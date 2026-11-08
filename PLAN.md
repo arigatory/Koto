@@ -51,8 +51,16 @@
   12. **`Koto.Testing`:** `Should()` для `AppResult<T>` (+ `HaveErrorForField`), `ErrorCatalog.Scan/ShouldBeValid`.
   13. Удалены: `IDomainService`, `IResultFactory`, `TapError`, `Specification*`, `MustBeEntity`,
       `NotEmptyWithKotoError`, `LengthWithKotoError`, `KotoProblemDetails`, `KotoHttpErrorOptions`.
-  Сборка: Marten 9.58 (critical advisory), Testcontainers 4.16, явный SourceLink убран (даёт SDK); NU1903/NU1904
-  валят сборку, NU1901/NU1902 — предупреждения.
+  14. `AppResult<T>` намеренно без `Bind`/`Tap`/`Ensure`/`TapErrors` — цепочки строятся на доменном `Result<T>`,
+      `AppResult` — финальный результат хендлера (`Map`, `Match`, `MatchAsync`).
+  15. `Koto.Api.FastEndpoints` теперь ссылается на `Koto.Validation` (FluentValidation `[12,13)` поверх ссылки
+      FastEndpoints 5.35 на FluentValidation 11) — у FE-only потребителей появляется транзитивная FV 12; в RBG эта
+      комбинация уже работала с 0.4.
+  16. `Koto.EventSourcing.Marten`: Marten **8.37 → 9.58** (мажор; critical advisory GHSA-rfx3-98h7-v3xp закрыт
+      только в 9.13+). Код пакета не менялся, тесты с контейнером зелёные, но потребителям Marten стоит проверить
+      свои проекции на Marten 9.
+  Сборка: Testcontainers 4.16, явный SourceLink убран (даёт SDK); NU1903/NU1904 валят сборку, NU1901/NU1902 —
+  предупреждения.
 
 - **v0.4.0** — **первый стабильный релиз** (сведение обкатки на Real Board Games, RBG фазы 0–8):
   все 14 пакетов выходят без суффикса preview; API заморожен по состоянию preview.15, breaking

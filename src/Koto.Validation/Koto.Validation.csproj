@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>Koto.Validation</PackageId>
-    <Description>FluentValidation extensions for Koto: MustBeValueObject, MustBeEntity, ListMustContainNumberOfItems, and ValidationBehavior pipeline integration.</Description>
+    <Description>FluentValidation extensions for Koto: MustBeValueObject, ListMustContainNumberOfItems, the ValidationBehavior pipeline behavior (enriched errors per field) and AddValidationBehavior ordering.</Description>
     <PackageTags>ddd;fluentvalidation;validation;pipeline;valueobject;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>

@@ -28,8 +28,10 @@ HTTP 422
   "correlationId": "0f3c…", "timestamp": "2026-11-08T02:11:09Z" }
 ```
 
-Void commands respond `200` with `"result": null`. Non-JSON responses (files, streams) stay outside
-the envelope. `timestamp` comes from the registered `TimeProvider` (`TimeProvider.System` unless you
+Void commands respond `200` with `"result": null`. Failures are sent as `Envelope<object?>` — the same
+keys with `result: null` — so `Envelope<T>` is the declared schema for the endpoint (`.Produces<Envelope<T>>()`
+in Minimal API, automatic in `Koto.Api.FastEndpoints`) and OpenAPI documents real properties.
+Non-JSON responses (files, streams) stay outside the envelope. `timestamp` comes from the registered `TimeProvider` (`TimeProvider.System` unless you
 register another one before `AddKotoAspNetCore`).
 
 ## Quick start
@@ -79,6 +81,9 @@ builder.Services.AddKotoAspNetCore(o => o
     .Map(e => e.Code.EndsWith(".rate-limited") ? StatusCodes.Status429TooManyRequests : null));
 ```
 
+Rules receive the `EnrichedError` wrapper; match on the original type through `Inner`:
+`o.Map(e => e is EnrichedError { Inner: QuotaExceeded } ? 429 : null)`.
+
 ## EnrichmentGuard — the second level of the error contract
 
 The compiler guarantees the data of the error record a handler constructs. The guard checks, at the
@@ -89,7 +94,7 @@ error of type `X` — `MeetupFullWithAlternative(MeetupFull Cause, Guid Alternat
 
 | Environment | Default |
 |---|---|
-| Development (and `IHostEnvironment`-less test hosts configured so) | throw `InvalidOperationException` |
-| anything else | log a warning, send the response as is |
+| Development | throw `InvalidOperationException` |
+| anything else, including hosts without `IHostEnvironment` | log a warning, send the response as is |
 
 Override with `o.EnrichmentGuard = EnrichmentGuardMode.Off / Warn / Throw`.

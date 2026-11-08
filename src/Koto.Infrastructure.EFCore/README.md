@@ -72,9 +72,10 @@ domain events from tracked aggregates and publishes them through Wolverine's EF 
 in the same transaction as your entity changes:
 
 ```csharp
-public async Task<Result<OrderId>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
+public async Task<AppResult<OrderId>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct = default)
 {
     var order = Order.Place(...);          // AddDomainEvent(...) inside
+    if (order.IsFailure) return order.Errors.Enrich();
     _orders.Add(order.Value);
     await _unitOfWork.CommitAsync(ct);     // entities + envelopes in one transaction → handler
     return order.Value.Id;
