@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Koto.Api.AspNetCore;
+using Koto.Application;
 using Koto.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,144 +12,131 @@ public class ResultMappingTests
 {
     private sealed class TestController : ControllerBase { }
 
-    private static HttpContext CreateHttpContext(Action<KotoHttpErrorOptions>? configure = null)
+    private static readonly EnrichedError NotFound = new TestError("orders.order.not-found", "nope").Enrich();
+
+    private static HttpContext CreateHttpContext(Action<KotoApiOptions>? configure = null)
     {
         var services = new ServiceCollection();
+        services.AddSingleton<TimeProvider>(new FixedTimeProvider(FixedTimeProvider.Default));
         services.AddKotoAspNetCore(configure);
         return new DefaultHttpContext { RequestServices = services.BuildServiceProvider() };
     }
 
-    private static TestController CreateController(Action<KotoHttpErrorOptions>? configure = null) =>
+    private static TestController CreateController(Action<KotoApiOptions>? configure = null) =>
         new() { ControllerContext = new ControllerContext { HttpContext = CreateHttpContext(configure) } };
 
     // ── Minimal API: ToHttpResult ──────────────────────────────────────────────
 
     [Fact]
-    public void ToHttpResult_success_returns_200_with_value()
+    public void ToHttpResult_success_returns_200_with_envelope()
     {
-        var httpContext = CreateHttpContext();
+        var result = AppResult<string>.Success("hello").ToHttpResult(CreateHttpContext(), "corr-1");
 
-        var result = Result<string>.Success("hello").ToHttpResult(httpContext);
-
-        result.Should().BeOfType<Ok<string>>().Which.Value.Should().Be("hello");
+        var json = result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which;
+        json.StatusCode.Should().Be(200);
+        json.Value!.Success.Should().BeTrue();
+        json.Value.Result.Should().Be("hello");
+        json.Value.Errors.Should().BeEmpty();
+        json.Value.CorrelationId.Should().Be("corr-1");
+        json.Value.Timestamp.Should().Be(FixedTimeProvider.Default);
     }
 
     [Fact]
-    public void ToHttpResult_unit_success_returns_204()
+    public void ToHttpResult_unit_success_returns_200_with_null_result()
     {
-        var result = Result.Success().ToHttpResult(CreateHttpContext());
+        var result = AppResult.Success().ToHttpResult(CreateHttpContext());
 
-        result.Should().BeOfType<NoContent>();
+        var json = result.Should().BeOfType<JsonHttpResult<Envelope<object?>>>().Which;
+        json.StatusCode.Should().Be(200);
+        json.Value!.Success.Should().BeTrue();
+        json.Value.Result.Should().BeNull();
     }
 
     [Fact]
-    public void ToHttpResult_failure_returns_problem_with_mapped_status()
+    public void ToHttpResult_failure_uses_status_from_options_and_lists_errors()
     {
-        var result = Result<string>.Failure(new Error("orders.order.not-found", "nope"))
-            .ToHttpResult(CreateHttpContext());
+        var result = AppResult<string>.Failure(NotFound).ToHttpResult(CreateHttpContext());
 
-        result.Should().BeOfType<ProblemHttpResult>().Which.StatusCode.Should().Be(404);
+        var json = result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which;
+        json.StatusCode.Should().Be(404);
+        json.Value!.Success.Should().BeFalse();
+        json.Value.Errors.Should().ContainSingle().Which.Code.Should().Be("orders.order.not-found");
     }
 
     [Fact]
     public void ToHttpResult_uses_configured_options()
     {
-        var httpContext = CreateHttpContext(o => o.Map("subscription.payment-failed", 502));
+        var httpContext = CreateHttpContext(o => o.Map("subscription.payment.failed", 502));
 
-        var result = Result<string>.Failure(new Error("subscription.payment-failed", "gateway down"))
+        var result = AppResult<string>.Failure(new TestError("subscription.payment.failed", "gateway down").Enrich())
             .ToHttpResult(httpContext);
 
-        result.Should().BeOfType<ProblemHttpResult>().Which.StatusCode.Should().Be(502);
+        result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which.StatusCode.Should().Be(502);
     }
 
     [Fact]
-    public void ToHttpResult_works_without_registered_options()
+    public void ToHttpResult_works_without_registered_services()
     {
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = new ServiceCollection().BuildServiceProvider(),
-        };
+        var httpContext = new DefaultHttpContext { RequestServices = new ServiceCollection().BuildServiceProvider() };
 
-        var result = Result<string>.Failure(new Error("x.not-found", "nope")).ToHttpResult(httpContext);
+        var result = AppResult<string>.Failure(NotFound).ToHttpResult(httpContext);
 
-        result.Should().BeOfType<ProblemHttpResult>().Which.StatusCode.Should().Be(404);
+        var json = result.Should().BeOfType<JsonHttpResult<Envelope<string>>>().Which;
+        json.StatusCode.Should().Be(404);
+        json.Value!.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
     }
 
     [Fact]
     public async Task ToHttpResultAsync_maps_pending_dispatch()
     {
-        var pending = Task.FromResult(Result<int>.Success(42));
+        var pending = Task.FromResult(AppResult<int>.Success(42));
 
         var result = await pending.ToHttpResultAsync(CreateHttpContext());
 
-        result.Should().BeOfType<Ok<int>>().Which.Value.Should().Be(42);
+        result.Should().BeOfType<JsonHttpResult<Envelope<int>>>().Which.Value!.Result.Should().Be(42);
     }
 
     // ── MVC: ToActionResult ────────────────────────────────────────────────────
 
     [Fact]
-    public void ToActionResult_success_returns_ok_with_value()
+    public void ToActionResult_success_returns_envelope_value()
     {
-        var controller = CreateController();
+        var actionResult = AppResult<string>.Success("hello").ToActionResult(CreateController());
 
-        var actionResult = Result<string>.Success("hello").ToActionResult(controller);
-
-        actionResult.Result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be("hello");
+        actionResult.Value.Should().NotBeNull();
+        actionResult.Value!.Success.Should().BeTrue();
+        actionResult.Value.Result.Should().Be("hello");
     }
 
     [Fact]
-    public void ToActionResult_unit_success_returns_204()
+    public void ToActionResult_unit_success_returns_envelope_with_null_result()
     {
-        var controller = CreateController();
+        var actionResult = AppResult.Success().ToActionResult(CreateController());
 
-        var actionResult = Result.Success().ToActionResult(controller);
-
-        actionResult.Should().BeOfType<NoContentResult>();
+        actionResult.Value!.Success.Should().BeTrue();
+        actionResult.Value.Result.Should().BeNull();
     }
 
     [Fact]
-    public void ToActionResult_failure_returns_problem_details_with_error_code()
+    public void ToActionResult_failure_returns_object_result_with_status_and_envelope()
     {
-        var controller = CreateController();
-
-        var actionResult = Result<string>.Failure(new Error("orders.order.not-found", "nope"))
-            .ToActionResult(controller);
+        var actionResult = AppResult<string>.Failure(NotFound).ToActionResult(CreateController(), "corr-2");
 
         var objectResult = actionResult.Result.Should().BeOfType<ObjectResult>().Which;
         objectResult.StatusCode.Should().Be(404);
-        var problem = objectResult.Value.Should().BeOfType<Microsoft.AspNetCore.Mvc.ProblemDetails>().Which;
-        problem.Detail.Should().Be("nope");
-        problem.Extensions["errorCode"].Should().Be("orders.order.not-found");
-    }
-
-    [Fact]
-    public void ToActionResult_multi_error_failure_returns_validation_problem_details()
-    {
-        var controller = CreateController();
-        var errors = new[]
-        {
-            new Error("general.value.is-required", "Email is required") { Field = "Email" },
-            new Error("general.value.is-required", "Name is required") { Field = "Name" },
-        };
-
-        var actionResult = Result<string>.Failure(errors).ToActionResult(controller);
-
-        var objectResult = actionResult.Result.Should().BeOfType<ObjectResult>().Which;
-        objectResult.StatusCode.Should().Be(400);
-        var problem = objectResult.Value.Should().BeOfType<ValidationProblemDetails>().Which;
-        problem.Errors.Should().ContainKeys("Email", "Name");
-        problem.Extensions["errorCodes"].Should().BeEquivalentTo(
-            new[] { "general.value.is-required", "general.value.is-required" });
+        var envelope = objectResult.Value.Should().BeOfType<Envelope<string>>().Which;
+        envelope.Success.Should().BeFalse();
+        envelope.Errors.Should().ContainSingle().Which.Code.Should().Be("orders.order.not-found");
+        envelope.CorrelationId.Should().Be("corr-2");
     }
 
     [Fact]
     public async Task ToActionResultAsync_maps_pending_dispatch()
     {
-        var controller = CreateController();
-        var pending = Task.FromResult(Result<int>.Success(7));
+        var pending = Task.FromResult(AppResult<int>.Success(7));
 
-        var actionResult = await pending.ToActionResultAsync(controller);
+        var actionResult = await pending.ToActionResultAsync(CreateController());
 
-        actionResult.Result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(7);
+        actionResult.Value!.Result.Should().Be(7);
     }
 }

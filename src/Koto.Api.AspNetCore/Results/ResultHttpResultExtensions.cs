@@ -1,64 +1,57 @@
+using Koto.Application;
 using Koto.Domain;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Koto.Api.AspNetCore;
 
 /// <summary>
-/// Maps <see cref="Result{T}"/> to Minimal API <see cref="IResult"/> responses:
-/// 200 OK (or 204 No Content for <see cref="Unit"/>) on success, RFC 7807 Problem Details
-/// on failure. Status codes come from the <see cref="KotoHttpErrorOptions"/> registered
-/// via <c>AddKotoAspNetCore()</c> (built-in defaults are used when not registered).
+/// Maps <see cref="AppResult{T}"/> to Minimal API <see cref="IResult"/>s: the Koto <see cref="Envelope{T}"/>
+/// with 200 on success, or the status chosen by <see cref="KotoApiOptions"/> on failure. Only application
+/// results are accepted — a domain <see cref="Result{T}"/> must be enriched first.
 /// </summary>
 public static class ResultHttpResultExtensions
 {
-    /// <summary>Maps a result to 200 OK with the value, or Problem Details on failure.</summary>
-    public static IResult ToHttpResult<T>(this Result<T> result, HttpContext httpContext, string? correlationId = null)
+    /// <summary>Maps a result to an envelope: 200 on success, classified status on failure.</summary>
+    public static IResult ToHttpResult<T>(this AppResult<T> result, HttpContext httpContext, string? correlationId = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(httpContext);
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : KotoProblemDetails.From(result.Errors, httpContext.GetKotoHttpErrorOptions(), correlationId);
+        var envelope = result.ToEnvelope(httpContext.GetKotoTimeProvider().GetUtcNow(), correlationId);
+        return TypedResults.Json(envelope, statusCode: StatusFor(result, httpContext));
     }
 
-    /// <summary>Maps a void result to 204 No Content, or Problem Details on failure.</summary>
-    public static IResult ToHttpResult(this Result<Unit> result, HttpContext httpContext, string? correlationId = null)
+    /// <summary>Maps a void result to an envelope whose result is <c>null</c>.</summary>
+    public static IResult ToHttpResult(this AppResult<Unit> result, HttpContext httpContext, string? correlationId = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         ArgumentNullException.ThrowIfNull(httpContext);
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : KotoProblemDetails.From(result.Errors, httpContext.GetKotoHttpErrorOptions(), correlationId);
+        var envelope = result.ToEnvelope(httpContext.GetKotoTimeProvider().GetUtcNow(), correlationId);
+        return TypedResults.Json(envelope, statusCode: StatusFor(result, httpContext));
     }
 
     /// <summary>Awaits a dispatch and maps the result — <c>dispatcher.SendAsync(cmd, ct).ToHttpResultAsync(ctx)</c>.</summary>
     public static async Task<IResult> ToHttpResultAsync<T>(
-        this Task<Result<T>> pending, HttpContext httpContext, string? correlationId = null)
+        this Task<AppResult<T>> pending, HttpContext httpContext, string? correlationId = null)
     {
         ArgumentNullException.ThrowIfNull(pending);
         var result = await pending.ConfigureAwait(false);
         return result.ToHttpResult(httpContext, correlationId);
     }
 
-    /// <summary>Awaits a void dispatch and maps the result to 204 No Content or Problem Details.</summary>
+    /// <summary>Awaits a void dispatch and maps the result.</summary>
     public static async Task<IResult> ToHttpResultAsync(
-        this Task<Result<Unit>> pending, HttpContext httpContext, string? correlationId = null)
+        this Task<AppResult<Unit>> pending, HttpContext httpContext, string? correlationId = null)
     {
         ArgumentNullException.ThrowIfNull(pending);
         var result = await pending.ConfigureAwait(false);
         return result.ToHttpResult(httpContext, correlationId);
     }
 
-    /// <summary>
-    /// Resolves the <see cref="KotoHttpErrorOptions"/> registered via <c>AddKotoAspNetCore()</c>,
-    /// or the built-in defaults when none are registered.
-    /// </summary>
-    public static KotoHttpErrorOptions GetKotoHttpErrorOptions(this HttpContext httpContext)
+    internal static int StatusFor<T>(AppResult<T> result, HttpContext httpContext)
     {
-        ArgumentNullException.ThrowIfNull(httpContext);
-        return httpContext.RequestServices.GetService<IOptions<KotoHttpErrorOptions>>()?.Value
-            ?? new KotoHttpErrorOptions();
+        if (result.IsSuccess)
+            return StatusCodes.Status200OK;
+        httpContext.GetEnrichmentGuard()?.Check(result.Errors);
+        return httpContext.GetKotoApiOptions().StatusCodeFor(result.FirstError);
     }
 }
