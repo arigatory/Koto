@@ -1,0 +1,31 @@
+PLAN.md
+  s_1df5dd62b768e4::t_366e48ec3e38b8 54-63
+docs/principles/ddd.md
+  s_1df5dd62b768e4::t_066ec97d3ba17c 145,147
+src/Koto.Api.AspNetCore/README.md
+  s_1df5dd62b768e4::t_fdbcedb3d6f145 31-34,84-86,97-98
+src/Koto.Application/README.md
+  s_1df5dd62b768e4::t_1f9dbdecead56f 128-132
+src/Koto.EventSourcing.Marten/README.md
+  s_1df5dd62b768e4::t_f28430c8849ba1 73
+src/Koto.Infrastructure.EFCore/README.md
+  s_1df5dd62b768e4::t_63788fbfb17d0e 75,78
+src/Koto.Validation/Koto.Validation.csproj
+  s_1df5dd62b768e4::t_9ec937914f1f47 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "18e5517852ee565fce1f276fff7d60b1d658a8f9",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "unknown"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
