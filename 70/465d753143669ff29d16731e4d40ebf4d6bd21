@@ -1,0 +1,37 @@
+tests/Koto.Application.Tests/ErrorEnrichmentTests.cs
+  s_1df5dd62b768e4::t_252967a391926e 1-79
+tests/Koto.Application.Tests/TestError.cs
+  s_1df5dd62b768e4::t_252967a391926e 1-6
+src/Koto.Application/Errors/EnrichedError.cs
+  s_1df5dd62b768e4::t_4bad29dc821e50 1-94
+tests/Koto.Application.Tests/PipelineBehaviorTests.cs
+  s_1df5dd62b768e4::t_252967a391926e 93
+tests/Koto.Application.Tests/CqrsDispatcherTests.cs
+  s_1df5dd62b768e4::t_252967a391926e 35,86
+tests/Koto.Application.Tests/EnrichedErrorTests.cs
+  s_1df5dd62b768e4::t_252967a391926e 1-69
+tests/Koto.Application.Tests/ErrorDetailsTests.cs
+  s_1df5dd62b768e4::t_252967a391926e 1-72
+src/Koto.Application/Errors/ErrorEnrichment.cs
+  s_1df5dd62b768e4::t_4bad29dc821e50 1-70
+src/Koto.Application/Errors/ErrorDetails.cs
+  s_1df5dd62b768e4::t_4bad29dc821e50 1-72
+tests/Koto.Application.Tests/NonTransactionalCommandTests.cs
+  s_1df5dd62b768e4::t_252967a391926e 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "70465d753143669ff29d16731e4d40ebf4d6bd21",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
