@@ -32,7 +32,7 @@ public class CqrsDispatcherTests
     private sealed class FailingResultCmdHandler : ICommandHandler<ResultCmd, string>
     {
         public Task<Result<string>> HandleAsync(ResultCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<string>.Failure(new Error("test.error", "Failed")));
+            Task.FromResult(Result<string>.Failure(new TestError("test.dispatcher.failed", "Failed")));
     }
 
     private sealed class TheQueryHandler : IQueryHandler<TheQuery, string>
@@ -83,7 +83,7 @@ public class CqrsDispatcherTests
         var result = await dispatcher.SendAsync<string>(new ResultCmd(1));
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("test.error");
+        result.FirstError.Code.Should().Be("test.dispatcher.failed");
     }
 
     [Fact]

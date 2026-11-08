@@ -90,7 +90,7 @@ public class PipelineBehaviorTests
     private sealed class FailCmdHandler : ICommandHandler<FailCmd, int>
     {
         public Task<Result<int>> HandleAsync(FailCmd cmd, CancellationToken ct = default) =>
-            Task.FromResult(Result<int>.Failure(new Error("test.command.failed", "nope")));
+            Task.FromResult(Result<int>.Failure(new TestError("test.command.failed", "nope")));
     }
 
     private sealed record ThrowCmd : ICommand<int>;

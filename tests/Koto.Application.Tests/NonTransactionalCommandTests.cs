@@ -45,7 +45,7 @@ public sealed class NonTransactionalCommandTests
 
         var result = await behavior.HandleAsync(
             new CounterCommand(),
-            () => Task.FromResult(Result<int>.Failure(new Error("otp.invalid", "bad code"))),
+            () => Task.FromResult(Result<int>.Failure(new TestError("test.otp.invalid", "bad code"))),
             default);
 
         result.IsFailure.Should().BeTrue();
