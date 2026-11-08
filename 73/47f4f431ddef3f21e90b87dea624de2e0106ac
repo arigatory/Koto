@@ -1,0 +1,28 @@
+src/Koto.Application/KotoApplicationAssemblies.cs
+  s_1df5dd62b768e4::t_5abd9f0f88a308 1-25
+src/Koto.Application/HandlerRegistrationValidator.cs
+  s_1df5dd62b768e4::t_5abd9f0f88a308 1-41
+tests/Koto.Application.Tests/KotoApplicationOptionsTests.cs
+  s_1df5dd62b768e4::t_4dc1008ab8089f 36,47,50
+src/Koto.Application/ServiceCollectionExtensions.cs
+  s_1df5dd62b768e4::t_5abd9f0f88a308 16-21,56-58,70-73,80,87,90,97-108,110-111,113-117,124-135
+  s_1df5dd62b768e4::t_15e8801e245a8a 15,136-137
+tests/Koto.Application.Tests/HandlerValidationTests.cs
+  s_1df5dd62b768e4::t_4dc1008ab8089f 1-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7347f4f431ddef3f21e90b87dea624de2e0106ac",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
