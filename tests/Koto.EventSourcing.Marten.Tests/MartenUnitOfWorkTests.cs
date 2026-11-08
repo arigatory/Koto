@@ -53,7 +53,7 @@ public sealed record ProcessedOperation(string Id);
 
 public sealed class MartenUnitOfWorkTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithImage("postgres:17-alpine")
         .Build();
 

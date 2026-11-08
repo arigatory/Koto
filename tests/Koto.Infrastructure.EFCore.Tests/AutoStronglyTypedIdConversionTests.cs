@@ -45,7 +45,7 @@ public sealed class ShipmentDbContext(DbContextOptions<ShipmentDbContext> option
 
 public sealed class AutoStronglyTypedIdConversionTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithImage("postgres:17-alpine")
         .Build();
 

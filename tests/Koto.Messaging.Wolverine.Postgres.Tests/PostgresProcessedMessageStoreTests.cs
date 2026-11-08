@@ -7,7 +7,7 @@ namespace Koto.Messaging.Wolverine.Postgres.Tests;
 
 public sealed class PostgresContainerFixture : IAsyncLifetime
 {
-    public PostgreSqlContainer Container { get; } = new PostgreSqlBuilder()
+    public PostgreSqlContainer Container { get; } = new PostgreSqlBuilder("postgres:17-alpine")
         .WithImage("postgres:17-alpine")
         .Build();
 

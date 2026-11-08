@@ -24,6 +24,9 @@ public static class ServiceCollectionExtensions
         where TContext : KotoDbContext
     {
         services.AddDbContextWithWolverineIntegration<TContext>(configure);
+        // Repository<,> depends on the abstract KotoDbContext; forward it to the concrete context
+        // (TryAdd — with several contexts in one service the first registered one backs the generic repository).
+        services.TryAddScoped<KotoDbContext>(sp => sp.GetRequiredService<TContext>());
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         // Default unit of work: commits publish domain events through the Wolverine outbox.
         // TryAdd — a hand-written IUnitOfWork registered by the consumer wins.

@@ -62,9 +62,7 @@ public static class ParcelShippedHandler
 /// </summary>
 public sealed class DomainEventOutboxFlowTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
-        .Build();
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
     private IHost _host = null!;
 

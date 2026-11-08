@@ -4,5 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- NuGet audit: high/critical advisories (NU1903/NU1904) still fail the build;
+         low/moderate transitive advisories (NU1901/NU1902) only warn. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

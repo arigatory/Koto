@@ -20,7 +20,7 @@ public sealed class PagingItem
 
 public sealed class QueryablePagingExtensionsTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithImage("postgres:17-alpine")
         .Build();
 

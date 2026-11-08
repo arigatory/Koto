@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Marten" Version="8.37.0" />
+    <PackageReference Include="Marten" Version="9.58.0" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.15.3" />
   </ItemGroup>
 

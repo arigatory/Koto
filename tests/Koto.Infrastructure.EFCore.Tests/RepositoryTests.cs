@@ -44,7 +44,7 @@ public sealed class TestDbContext : KotoDbContext
 
 public sealed class RepositoryTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("koto_tests")
         .Build();
 
