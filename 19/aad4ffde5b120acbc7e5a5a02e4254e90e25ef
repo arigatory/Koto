@@ -1,0 +1,26 @@
+src/Koto.Infrastructure.EFCore/Koto.Infrastructure.EFCore.csproj
+  s_1df5dd62b768e4::t_69a8b06a6b5ba9 6-7
+src/Koto.Infrastructure.EFCore/README.md
+  s_1df5dd62b768e4::t_69a8b06a6b5ba9 3
+tests/Koto.Infrastructure.EFCore.Tests/EfCoreUnitOfWorkTests.cs
+  s_1df5dd62b768e4::t_69a8b06a6b5ba9 1-40
+src/Koto.Infrastructure.EFCore/EfCoreUnitOfWork.cs
+  s_1df5dd62b768e4::t_69a8b06a6b5ba9 19-21,54,61-66
+  s_1df5dd62b768e4::t_b56b824d6ab190 67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19aad4ffde5b120acbc7e5a5a02e4254e90e25ef",
+  "prompts": {},
+  "sessions": {
+    "s_1df5dd62b768e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "debe45cf-61d7-481a-b58e-d78dfc8b59e2",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
