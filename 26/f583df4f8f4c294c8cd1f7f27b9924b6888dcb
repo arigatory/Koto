@@ -1,0 +1,29 @@
+PLAN.md
+  s_c75a2c7d2885a4::t_a5eb7bfb6de545 20-25
+skills/koto/SKILL.md
+  s_c75a2c7d2885a4::t_03e27754453f3b 56
+skills/koto/references/dotnet-service.md
+  s_c75a2c7d2885a4::t_dae144f25b176c 161-162
+src/Koto.Infrastructure.EFCore/README.md
+  s_c75a2c7d2885a4::t_f2e981add3c447 21,90-103
+src/Koto.Infrastructure.EFCore/ServiceCollectionExtensions.cs
+  s_c75a2c7d2885a4::t_2c2a010c039394 36-58
+tests/Koto.Infrastructure.EFCore.Tests/ServiceCollectionExtensionsTests.cs
+  s_c75a2c7d2885a4::t_91a8854e0e2114 23-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "26f583df4f8f4c294c8cd1f7f27b9924b6888dcb",
+  "prompts": {},
+  "sessions": {
+    "s_c75a2c7d2885a4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a044573f-d6eb-4caf-b26e-9ec0b3e1f752",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
