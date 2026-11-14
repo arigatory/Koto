@@ -12,7 +12,7 @@ FastEndpoints integration for Koto DDD building blocks. Builds on **Koto.Api.Asp
 | `QueryEndpoint<TQuery, TResult>` | Dispatches a query → `Envelope<TResult>` |
 | `MappedCommandEndpoint<TRequest, TCommand[, TResult]>` | Maps an HTTP request DTO to a command via `ToCommand` — keeps server-derived fields out of the wire contract |
 | `MappedQueryEndpoint<TRequest, TQuery, TResult>` | Maps an HTTP request DTO to a query via `ToQuery` |
-| `UseKotoFastEndpoints()` / `MapKotoFastEndpoints()` | `UseFastEndpoints` with binding and validator failures rendered as the envelope |
+| `UseKotoFastEndpoints()` / `MapKotoFastEndpoints()` | `UseFastEndpoints` with binding and validator failures rendered as the envelope, and parameterless commands/queries allowed as request models |
 | `ClaimsPrincipalExtensions.GetUserId()` | Reads the user id from the `NameIdentifier` claim (`TryGetUserId` for the no-throw path) |
 | `CorrelationIdMiddleware` / `ICorrelationIdAccessor` | Reads/generates `X-Correlation-ID`, echoes it in the response and in every envelope |
 | `GlobalExceptionHandler` | Unhandled exception → 500 envelope with `general.server.internal-error` |
@@ -69,6 +69,27 @@ public class GetOrderEndpoint : QueryEndpoint<GetOrderQuery, OrderDto>
     }
 }
 ```
+
+## Commands and queries without parameters
+
+A command or query with no properties is a valid request model — `UseKotoFastEndpoints()` /
+`MapKotoFastEndpoints()` turn on FastEndpoints' `AllowEmptyRequestDtos` and drop the default
+`application/json` requirement for such endpoints, so a bodyless call works:
+
+```csharp
+public sealed record GetHealthQuery : IQuery<HealthDto>;
+public sealed record RebuildIndexCommand : ICommand;
+
+public sealed class RebuildIndexEndpoint : CommandEndpoint<RebuildIndexCommand>
+{
+    public override void Configure() => Post("/index/rebuild");   // POST with no body → 200 envelope
+}
+```
+
+Endpoints whose request has properties are unchanged (a `POST` still needs `Content-Type: application/json`).
+The content-type part is applied through `Config.Endpoints.Configurator`, which holds a single action: a host
+that assigns its own configurator replaces Koto's, so call `KotoFastEndpointsConfig.ApplyKotoDefaults(ep)`
+from it to keep both.
 
 ## Server-derived fields (claims, route, tenant)
 

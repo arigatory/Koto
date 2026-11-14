@@ -7,6 +7,16 @@
 
 ## История релизов
 
+- **не выпущено (после v0.5.0-preview.1)** — `Koto.Api.FastEndpoints`: **команды и запросы без свойств** как модель запроса.
+  Раньше `QueryEndpoint<GetHealthQuery, HealthDto>` с `record GetHealthQuery : IQuery<HealthDto>` отвечал 500
+  (`general.server.internal-error`) на первый же запрос: биндер FastEndpoints отвергает DTO без публичных свойств, причём
+  не при старте, а в рантайме, до вызова хендлера. Тест `Unhandled_exception_returns_500_envelope` этого не замечал —
+  он ждал 500 и получал его по другой причине; теперь он проверяет, что диспетчер был вызван.
+  `UseKotoFastEndpoints()` / `MapKotoFastEndpoints()` включают `AllowEmptyRequestDtos` и снимают требование
+  `Content-Type: application/json` с эндпоинтов, чей запрос не имеет свойств (`POST /reset` без тела → 200).
+  Новое публичное API: `Config.AllowParameterlessRequests()`, `KotoFastEndpointsConfig.ApplyKotoDefaults(EndpointDefinition)`.
+  Не breaking. Ограничение: `Config.Endpoints.Configurator` в FastEndpoints 5.35 только на запись, поэтому хост, который
+  присваивает свой конфигуратор, должен вызвать `ApplyKotoDefaults` внутри него. Найдено в проекте Repro.
 - **v0.5.0-preview.1** — **новая модель ошибок и конверт ответа** ([ADR-026](adr/ADR-026-error-model-and-envelope.md),
   спека [docs/packages/16](docs/packages/16-error-model-envelope.md)). Цель: отказ едет как значение от агрегата
   до клиента по одному рельсу, все ошибки доходят, у каждой есть типизированные `details`, формат ответа один на
