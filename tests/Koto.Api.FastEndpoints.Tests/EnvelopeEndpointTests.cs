@@ -68,6 +68,28 @@ public sealed class ResetEndpoint : CommandEndpoint<ResetCommand>
     }
 }
 
+public sealed record ArchiveCommand(Guid Id) : App.ICommand;
+
+public sealed class ArchiveEndpoint : CommandEndpoint<ArchiveCommand>
+{
+    public override void Configure()
+    {
+        Post("/things/{id}/archive");
+        AllowAnonymous();
+    }
+}
+
+public sealed record RenameCommand(Guid Id, string Name) : App.ICommand;
+
+public sealed class RenameEndpoint : CommandEndpoint<RenameCommand>
+{
+    public override void Configure()
+    {
+        Post("/things/{id:guid}/rename");
+        AllowAnonymous();
+    }
+}
+
 public class EnvelopeEndpointTests
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
@@ -198,6 +220,31 @@ public class EnvelopeEndpointTests
         var envelope = await response.Content.ReadFromJsonAsync<Envelope<object?>>(Web);
         envelope!.Success.Should().BeTrue();
         await dispatcher.Received(1).SendAsync(Arg.Any<ResetCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Command_bound_entirely_from_the_route_needs_no_body()
+    {
+        var dispatcher = Substitute.For<ICqrsDispatcher>();
+        dispatcher.SendAsync(Arg.Any<App.ICommand>(), Arg.Any<CancellationToken>())
+            .Returns(AppResult<Unit>.Success(Unit.Value));
+        using var host = await StartAsync(dispatcher);
+        var id = Guid.NewGuid();
+
+        var response = await host.GetTestClient().PostAsync($"/things/{id}/archive", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await dispatcher.Received(1).SendAsync(Arg.Is<ArchiveCommand>(c => c.Id == id), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Command_with_a_body_property_besides_the_route_still_requires_json()
+    {
+        using var host = await StartAsync(Substitute.For<ICqrsDispatcher>());
+
+        var response = await host.GetTestClient().PostAsync($"/things/{Guid.NewGuid()}/rename", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);
     }
 
     [Fact]

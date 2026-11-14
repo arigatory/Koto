@@ -17,6 +17,11 @@
   Новое публичное API: `Config.AllowParameterlessRequests()`, `KotoFastEndpointsConfig.ApplyKotoDefaults(EndpointDefinition)`.
   Не breaking. Ограничение: `Config.Endpoints.Configurator` в FastEndpoints 5.35 только на запись, поэтому хост, который
   присваивает свой конфигуратор, должен вызвать `ApplyKotoDefaults` внутри него. Найдено в проекте Repro.
+- **не выпущено (после v0.5.0-preview.1)** — `Koto.Api.FastEndpoints`: **команда, все поля которой приходят из маршрута,
+  не требует тела.** `POST /signals/{signalId}/approve` с `record ApproveSignalCommand(Guid SignalId) : ICommand` без тела
+  отвечал 415: FastEndpoints по умолчанию требует `application/json` для POST/PUT/PATCH. Теперь `ApplyKotoDefaults`
+  снимает это требование, если каждое записываемое свойство запроса совпадает с параметром маршрута (во всех маршрутах
+  эндпоинта). Если есть хоть одно свойство вне маршрута, поведение прежнее. Не breaking. Найдено в проекте Repro.
 - **не выпущено (после v0.5.0-preview.1)** — `Koto.Infrastructure.EFCore`: **`AddKotoEFCoreWithoutOutbox<TContext>()`** для
   сервиса без Wolverine. Раньше единственная готовая регистрация (`AddKotoEFCore`) требовала Wolverine, и сервис без
   доменных событий писал руками `AddDbContext`, проброс `KotoDbContext`, `IRepository<,>` и собственный `IUnitOfWork`,
