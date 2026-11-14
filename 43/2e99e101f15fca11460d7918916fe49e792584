@@ -1,0 +1,29 @@
+PLAN.md
+  s_c75a2c7d2885a4::t_c858901822671e 10-19
+adr/ADR-008-fastendpoints-api-layer.md
+  s_c75a2c7d2885a4::t_7a2614ab75ee36 164-182
+skills/koto/SKILL.md
+  s_c75a2c7d2885a4::t_c3787c08458308 55
+src/Koto.Api.FastEndpoints/KotoFastEndpointsConfig.cs
+  s_c75a2c7d2885a4::t_270a3de6bbc726 27,42,61-96
+src/Koto.Api.FastEndpoints/README.md
+  s_c75a2c7d2885a4::t_c5f65f70a6fde6 15,73-93
+tests/Koto.Api.FastEndpoints.Tests/EnvelopeEndpointTests.cs
+  s_c75a2c7d2885a4::t_17eebab57f1cda 59-70,169-223,240-241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "432e99e101f15fca11460d7918916fe49e792584",
+  "prompts": {},
+  "sessions": {
+    "s_c75a2c7d2885a4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a044573f-d6eb-4caf-b26e-9ec0b3e1f752",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "Ivan Panchenko <arigatory@gmail.com>"
+    }
+  }
+}
