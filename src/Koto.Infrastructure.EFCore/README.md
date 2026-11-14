@@ -18,6 +18,7 @@ dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL  # or your preferred pr
 | `StronglyTypedIdValueConverter<TId, TRaw>` | EF Core `ValueConverter` for `StronglyTypedId<T>` properties |
 | `StronglyTypedIdConvention` | Auto-applies converters to all strongly-typed ID properties |
 | `AddKotoEFCore<TContext>()` | Registers the DbContext via Wolverine's EF Core integration |
+| `AddKotoEFCoreWithoutOutbox<TContext>()` | Registers the DbContext, repository and unit of work for a service that does not run Wolverine |
 
 ## Usage
 
@@ -85,6 +86,20 @@ public async Task<AppResult<OrderId>> HandleAsync(PlaceOrderCommand cmd, Cancell
 If aggregates raised domain events and no Wolverine outbox (`IDbContextOutbox`) is registered,
 `CommitAsync` **throws** instead of saving and dropping the events silently — configure Wolverine
 or register your own `IUnitOfWork` that dispatches them.
+
+### Without Wolverine
+
+A service whose aggregates raise no domain events does not need Wolverine. One call replaces the
+hand-written `AddDbContext` + repository + `IUnitOfWork` registrations:
+
+```csharp
+builder.Services.AddKotoEFCoreWithoutOutbox<AppDbContext>(opts =>
+    opts.UseNpgsql(builder.Configuration.GetConnectionString("Db")));
+```
+
+It registers `EfCoreUnitOfWork<TContext>` as the default `IUnitOfWork` (TryAdd — your own wins). There is
+no outbox, so the first domain event an aggregate raises makes `CommitAsync` throw rather than be lost:
+that is the signal to move to `AddKotoEFCore` with Wolverine.
 
 ### 3 — Use a repository
 

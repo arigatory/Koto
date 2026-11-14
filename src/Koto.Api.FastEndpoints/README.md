@@ -86,7 +86,19 @@ public sealed class RebuildIndexEndpoint : CommandEndpoint<RebuildIndexCommand>
 }
 ```
 
-Endpoints whose request has properties are unchanged (a `POST` still needs `Content-Type: application/json`).
+The same holds when every property of the command comes from the route — there is still no body to send:
+
+```csharp
+public sealed record ApproveSignalCommand(Guid SignalId) : ICommand;
+
+public sealed class ApproveSignalEndpoint : CommandEndpoint<ApproveSignalCommand>
+{
+    public override void Configure() => Post("/signals/{signalId}/approve");   // POST with no body → 200 envelope
+}
+```
+
+An endpoint with at least one property that is not a route parameter is unchanged (a `POST` still needs
+`Content-Type: application/json`).
 The content-type part is applied through `Config.Endpoints.Configurator`, which holds a single action: a host
 that assigns its own configurator replaces Koto's, so call `KotoFastEndpointsConfig.ApplyKotoDefaults(ep)`
 from it to keep both.
