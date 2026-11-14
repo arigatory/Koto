@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Routing;
 namespace Koto.Api.FastEndpoints;
 
 /// <summary>Makes FastEndpoints' own error responses (binding and validator failures) use the Koto <see cref="Envelope{T}"/>.</summary>
-public static class KotoFastEndpointsConfig
+public static partial class KotoFastEndpointsConfig
 {
     /// <summary>
     /// <c>UseFastEndpoints</c> with the Koto envelope applied to binding and validator failures
@@ -63,7 +63,9 @@ public static class KotoFastEndpointsConfig
     /// <c>record RebuildIndexCommand : ICommand</c>) be the request model of a Koto endpoint. FastEndpoints
     /// rejects such DTOs by default, and it does so on the first request rather than at startup, so the
     /// endpoint answered 500 before the handler ran. Sets <see cref="EndpointOptions.AllowEmptyRequestDtos"/> and
-    /// drops the default <c>application/json</c> requirement for those endpoints, so <c>POST /reset</c> works without a body.
+    /// drops the default <c>application/json</c> requirement for endpoints with nothing to read from the body — a request
+    /// without properties, or one whose properties all come from the route — so <c>POST /reset</c> and
+    /// <c>POST /signals/{signalId}/approve</c> work without a body.
     /// The second part goes through <see cref="EndpointOptions.Configurator"/> — see <see cref="ApplyKotoDefaults"/>
     /// if the host sets a configurator of its own.
     /// </summary>
@@ -84,15 +86,46 @@ public static class KotoFastEndpointsConfig
     public static void ApplyKotoDefaults(EndpointDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        if (IsParameterless(definition.ReqDtoType))
+        if (HasNothingToReadFromBody(definition))
             definition.Description(builder => builder.ClearDefaultAccepts());
     }
 
-    // A request model with nothing to bind: no body is expected, so "Content-Type: application/json" must not be required.
-    private static bool IsParameterless(Type requestType) =>
-        requestType != typeof(EmptyRequest)
-        && requestType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-            .All(p => !p.CanWrite || p.Name == "EqualityContract");
+    // No body is expected when the request model has no bindable properties at all, or when every one of
+    // them is filled from the route (POST /signals/{signalId}/approve with record ApproveSignalCommand(Guid SignalId)).
+    // Such an endpoint must not demand "Content-Type: application/json".
+    private static bool HasNothingToReadFromBody(EndpointDefinition definition)
+    {
+        if (definition.ReqDtoType == typeof(EmptyRequest))
+            return false;
+
+        var properties = definition.ReqDtoType
+            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(p => p.CanWrite && p.Name != "EqualityContract")
+            .Select(p => p.Name)
+            .ToArray();
+        if (properties.Length == 0)
+            return true;
+
+        var routes = definition.Routes;
+        return routes is { Length: > 0 }
+            && routes.All(route =>
+            {
+                var parameters = RouteParameterNames(route);
+                return properties.All(parameters.Contains);
+            });
+    }
+
+    private static HashSet<string> RouteParameterNames(string route)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (System.Text.RegularExpressions.Match match in RouteParameter().Matches(route))
+            names.Add(match.Groups[1].Value);
+        return names;
+    }
+
+    // {id}, {id:guid}, {id?}, {*path}, {id=5} → "id" / "path"
+    [System.Text.RegularExpressions.GeneratedRegex(@"\{\*{0,2}([A-Za-z_][A-Za-z0-9_]*)[^}]*\}")]
+    private static partial System.Text.RegularExpressions.Regex RouteParameter();
 
     /// <summary>
     /// Maps FastEndpoints validation failures to an envelope: a failure carrying a Koto
