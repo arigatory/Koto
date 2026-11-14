@@ -24,6 +24,7 @@ public static class KotoFastEndpointsConfig
         return app.UseFastEndpoints(config =>
         {
             config.ApplyKotoEnvelope();
+            config.AllowParameterlessRequests();
             configure?.Invoke(config);
         });
     }
@@ -38,6 +39,7 @@ public static class KotoFastEndpointsConfig
         return app.MapFastEndpoints(config =>
         {
             config.ApplyKotoEnvelope();
+            config.AllowParameterlessRequests();
             configure?.Invoke(config);
         });
     }
@@ -55,6 +57,42 @@ public static class KotoFastEndpointsConfig
         config.Errors.ResponseBuilder = BuildErrorEnvelope;
         return config;
     }
+
+    /// <summary>
+    /// Lets a command or query without properties (<c>record GetHealthQuery : IQuery&lt;HealthDto&gt;</c>,
+    /// <c>record RebuildIndexCommand : ICommand</c>) be the request model of a Koto endpoint. FastEndpoints
+    /// rejects such DTOs by default, and it does so on the first request rather than at startup, so the
+    /// endpoint answered 500 before the handler ran. Sets <see cref="EndpointOptions.AllowEmptyRequestDtos"/> and
+    /// drops the default <c>application/json</c> requirement for those endpoints, so <c>POST /reset</c> works without a body.
+    /// The second part goes through <see cref="EndpointOptions.Configurator"/> — see <see cref="ApplyKotoDefaults"/>
+    /// if the host sets a configurator of its own.
+    /// </summary>
+    public static Config AllowParameterlessRequests(this Config config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        config.Endpoints.AllowEmptyRequestDtos = true;
+
+        config.Endpoints.Configurator = ApplyKotoDefaults;
+        return config;
+    }
+
+    /// <summary>
+    /// The per-endpoint part of <see cref="AllowParameterlessRequests"/>. <see cref="EndpointOptions.Configurator"/>
+    /// holds a single action, so a host that assigns its own replaces Koto's — call this from that action
+    /// (<c>c.Endpoints.Configurator = ep =&gt; { KotoFastEndpointsConfig.ApplyKotoDefaults(ep); ... }</c>) to keep both.
+    /// </summary>
+    public static void ApplyKotoDefaults(EndpointDefinition definition)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        if (IsParameterless(definition.ReqDtoType))
+            definition.Description(builder => builder.ClearDefaultAccepts());
+    }
+
+    // A request model with nothing to bind: no body is expected, so "Content-Type: application/json" must not be required.
+    private static bool IsParameterless(Type requestType) =>
+        requestType != typeof(EmptyRequest)
+        && requestType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .All(p => !p.CanWrite || p.Name == "EqualityContract");
 
     /// <summary>
     /// Maps FastEndpoints validation failures to an envelope: a failure carrying a Koto

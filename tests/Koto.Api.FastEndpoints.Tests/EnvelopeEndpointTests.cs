@@ -56,6 +56,18 @@ public sealed class BoomEndpoint : QueryEndpoint<BoomQuery, int>
     }
 }
 
+public sealed record ResetCommand : App.ICommand;
+
+public sealed class ResetEndpoint : CommandEndpoint<ResetCommand>
+{
+    public override void Configure()
+    {
+        Post("/reset");
+        AllowAnonymous();
+        Description(b => b.WithName("reset-all"));
+    }
+}
+
 public class EnvelopeEndpointTests
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
@@ -155,6 +167,61 @@ public class EnvelopeEndpointTests
     }
 
     [Fact]
+    public async Task Parameterless_query_is_dispatched_and_returns_200_envelope()
+    {
+        var dispatcher = Substitute.For<ICqrsDispatcher>();
+        dispatcher.QueryAsync<int>(Arg.Any<IQuery<int>>(), Arg.Any<CancellationToken>())
+            .Returns(AppResult<int>.Success(42));
+        using var host = await StartAsync(dispatcher);
+        var client = host.GetTestClient();
+
+        var response = await client.GetAsync("/boom");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<int>>(Web);
+        envelope!.Success.Should().BeTrue();
+        envelope.Result.Should().Be(42);
+    }
+
+    [Fact]
+    public async Task Parameterless_command_is_dispatched_and_returns_200_envelope()
+    {
+        var dispatcher = Substitute.For<ICqrsDispatcher>();
+        dispatcher.SendAsync(Arg.Any<App.ICommand>(), Arg.Any<CancellationToken>())
+            .Returns(AppResult<Unit>.Success(Unit.Value));
+        using var host = await StartAsync(dispatcher);
+        var client = host.GetTestClient();
+
+        var response = await client.PostAsync("/reset", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<object?>>(Web);
+        envelope!.Success.Should().BeTrue();
+        await dispatcher.Received(1).SendAsync(Arg.Any<ResetCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Parameterless_endpoint_keeps_the_description_set_in_Configure()
+    {
+        using var host = await StartAsync(Substitute.For<ICqrsDispatcher>());
+
+        var names = host.Services.GetRequiredService<Microsoft.AspNetCore.Routing.EndpointDataSource>().Endpoints
+            .Select(e => e.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.EndpointNameMetadata>()?.EndpointName);
+
+        names.Should().Contain("reset-all");
+    }
+
+    [Fact]
+    public async Task Command_with_properties_still_requires_json_content_type()
+    {
+        using var host = await StartAsync(Substitute.For<ICqrsDispatcher>());
+
+        var response = await host.GetTestClient().PostAsync("/ping", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.UnsupportedMediaType);
+    }
+
+    [Fact]
     public async Task Unhandled_exception_returns_500_envelope()
     {
         var dispatcher = Substitute.For<ICqrsDispatcher>();
@@ -170,5 +237,7 @@ public class EnvelopeEndpointTests
         envelope!.Success.Should().BeFalse();
         envelope.Errors.Should().ContainSingle().Which.Code.Should().Be("general.server.internal-error");
         envelope.CorrelationId.Should().NotBeNullOrEmpty();
+        // The 500 must come from the handler, not from request binding failing before dispatch.
+        await dispatcher.Received(1).QueryAsync<int>(Arg.Any<IQuery<int>>(), Arg.Any<CancellationToken>());
     }
 }
