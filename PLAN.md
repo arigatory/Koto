@@ -17,6 +17,12 @@
   Новое публичное API: `Config.AllowParameterlessRequests()`, `KotoFastEndpointsConfig.ApplyKotoDefaults(EndpointDefinition)`.
   Не breaking. Ограничение: `Config.Endpoints.Configurator` в FastEndpoints 5.35 только на запись, поэтому хост, который
   присваивает свой конфигуратор, должен вызвать `ApplyKotoDefaults` внутри него. Найдено в проекте Repro.
+- **не выпущено (после v0.5.0-preview.1)** — `Koto.Infrastructure.EFCore`: **`AddKotoEFCoreWithoutOutbox<TContext>()`** для
+  сервиса без Wolverine. Раньше единственная готовая регистрация (`AddKotoEFCore`) требовала Wolverine, и сервис без
+  доменных событий писал руками `AddDbContext`, проброс `KotoDbContext`, `IRepository<,>` и собственный `IUnitOfWork`,
+  хотя `EfCoreUnitOfWork<TContext>` уже умел работать без outbox. Новый метод регистрирует всё одним вызовом; при первом
+  поднятом доменном событии `CommitAsync` бросает исключение (поведение 0.5 сохранено) — это сигнал подключать Wolverine.
+  Не breaking. Найдено в проекте Repro.
 - **v0.5.0-preview.1** — **новая модель ошибок и конверт ответа** ([ADR-026](adr/ADR-026-error-model-and-envelope.md),
   спека [docs/packages/16](docs/packages/16-error-model-envelope.md)). Цель: отказ едет как значение от агрегата
   до клиента по одному рельсу, все ошибки доходят, у каждой есть типизированные `details`, формат ответа один на

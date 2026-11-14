@@ -33,4 +33,27 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IUnitOfWork, EfCoreUnitOfWork<TContext>>();
         return services;
     }
+
+    /// <summary>
+    /// Registers <typeparamref name="TContext"/> for a service that does <b>not</b> run Wolverine: a plain
+    /// <c>AddDbContext</c>, the generic <see cref="Repository{TAgg,TId}"/> and <see cref="EfCoreUnitOfWork{TContext}"/>
+    /// as the default <see cref="IUnitOfWork"/> — the three registrations such a service would otherwise write by hand.
+    /// </summary>
+    /// <remarks>
+    /// There is no outbox, so domain events have nowhere to go: <see cref="EfCoreUnitOfWork{TContext}.CommitAsync"/>
+    /// throws when a tracked aggregate raised one, instead of saving and dropping it. Use this for services whose
+    /// aggregates raise no domain events; once they do, switch to <see cref="AddKotoEFCore{TContext}"/> with Wolverine
+    /// or register your own <see cref="IUnitOfWork"/> before this call (TryAdd — yours wins).
+    /// </remarks>
+    public static IServiceCollection AddKotoEFCoreWithoutOutbox<TContext>(
+        this IServiceCollection services,
+        Action<DbContextOptionsBuilder> configure)
+        where TContext : KotoDbContext
+    {
+        services.AddDbContext<TContext>(configure);
+        services.TryAddScoped<KotoDbContext>(sp => sp.GetRequiredService<TContext>());
+        services.TryAddScoped(typeof(IRepository<,>), typeof(Repository<,>));
+        services.TryAddScoped<IUnitOfWork, EfCoreUnitOfWork<TContext>>();
+        return services;
+    }
 }
